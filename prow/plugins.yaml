@@ -73,3 +73,21 @@ plugins:
   - yuks
   - wip
   - shrug
+
+  jetstack/tarmak:
+  - trigger
+  - release-note
+  - docs-no-retest
+  - assign
+  - close
+  - reopen
+  - golint
+  - heart
+  - hold
+  - label
+  - lgtm
+  # - milestonestatus
+  - size
+  - yuks
+  - wip
+  - shrug
