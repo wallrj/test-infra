@@ -28,4 +28,33 @@ log_level: info
 #   endpoint: pushgateway
 
 presubmits:
+  jetstack/navigator:
+  - name: navigator-quick-verify
+    always_run: true
+    skip_report: false
+    context: navigator-quick-verify
+    max_concurrency: 10
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.4
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/go/src"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+    trigger: "(?m)^/test( all| verify| quick verify),?(\\s+|$)"
+    rerun_command: "/test verify"
+
 postsubmits:

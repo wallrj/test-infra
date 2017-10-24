@@ -15,9 +15,9 @@
 VERSION = 0.4
 
 image:
-	docker build -t "gcr.io/k8s-testimages/gcloud-in-go:$(VERSION)" .
+	docker build -t "gcr.io/jetstack-build-infra/gcloud-in-go:$(VERSION)" .
 
 push: image
-	gcloud docker -- push "gcr.io/k8s-testimages/gcloud-in-go:$(VERSION)"
+	gcloud docker -- push "gcr.io/jetstack-build-infra/gcloud-in-go:$(VERSION)"
 
 .PHONY: image push
