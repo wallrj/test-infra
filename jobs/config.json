@@ -8,5 +8,15 @@
     "sigOwners": [
       "UNKNOWN"
     ]
+  },
+  "navigator-e2e": {
+    "args": [
+      "make",
+      "e2e-test"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
   }
 }
