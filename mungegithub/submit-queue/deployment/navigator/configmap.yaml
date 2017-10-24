@@ -1,6 +1,6 @@
 # basic config options.
 http-cache-dir: /cache/httpcache
-organization: jetstack-experimental
+organization: jetstack
 project: navigator
 # Make sure approval-handler and blunderbuss run before submit-queue.
 # Otherwise it's going to take an extra-cycle to detect the label change.
