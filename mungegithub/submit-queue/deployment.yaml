@@ -14,7 +14,7 @@ spec:
       - name: submit-queue
         command:
         - /mungegithub
-        - --dry-run=true
+        - --dry-run=false
         - --stderrthreshold=INFO
         - --config-path=/etc/munge-config/configmap.yaml
         image: gcr.io/k8s-testimages/submit-queue:2017-05-02-90fe8836
