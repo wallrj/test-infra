@@ -17,7 +17,7 @@ spec:
     http:
       paths:
         - backend:
-            serviceName: cert-manager-sq-status
+            serviceName: navigator-sq-status
             servicePort: 80
   tls:
   - hosts:
