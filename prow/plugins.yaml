@@ -6,7 +6,7 @@ triggers:
 - repos:
   - jetstack-experimental/cert-manager
   - jetstack/test-infra
-  - jetstack-experimental/navigator
+  - jetstack/navigator
   trusted_org: jetstack-experimental
 
 # heart:
@@ -56,7 +56,7 @@ plugins:
   - wip
   - shrug
 
-  jetstack-experimental/navigator:
+  jetstack/navigator:
   - trigger
   - release-note
   - docs-no-retest
