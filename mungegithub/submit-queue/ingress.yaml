@@ -13,7 +13,14 @@ spec:
         - backend:
             serviceName: cert-manager-sq-status
             servicePort: 80
+  - host: navigator.submit-queue.build-infra.jetstack.net
+    http:
+      paths:
+        - backend:
+            serviceName: cert-manager-sq-status
+            servicePort: 80
   tls:
   - hosts:
     - cert-manager.submit-queue.build-infra.jetstack.net
+    - navigator.submit-queue.build-infra.jetstack.net
     secretName: submit-queue-tls
