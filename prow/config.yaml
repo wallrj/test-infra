@@ -64,7 +64,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/minikube-in-go:0.4
+      - image: gcr.io/jetstack-build-infra/minikube-in-go:0.1
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/go/src"
@@ -73,14 +73,21 @@ presubmits:
         env:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/service-account/service-account.json
+        securityContext:
+          privileged: true
         volumeMounts:
         - name: service
           mountPath: /etc/service-account
           readOnly: true
+        - name: dockersocket
+          mountPath: /var/run
       volumes:
       - name: service
         secret:
           secretName: service-account
+      - name: dockersocket
+        hostPath:
+          path: /var/run
     trigger: "(?m)^/test( all| e2e),?(\\s+|$)"
     rerun_command: "/test e2e"
 
