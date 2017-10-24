@@ -2,7 +2,7 @@
 http-cache-dir: /cache/httpcache
 organization: jetstack-experimental
 project: cert-manager
-pr-mungers: cherrypick-must-have-milestone,cherrypick-clear-after-merge,cherrypick-queue
+pr-mungers: cherrypick-must-have-milestone,label-unapproved-picks,cherrypick-auto-approve,cherrypick-clear-after-merge,cherrypick-queue
 state: all
 labels: cherrypick-candidate
 token-file: /etc/secret-volume/token
