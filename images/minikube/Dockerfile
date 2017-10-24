@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Includes go, gcloud, minikube, kubectl and minikube
-FROM docker:17.06.1
+FROM docker:1.13.1
 LABEL maintainer="senlu@google.com"
 
 RUN apk add --no-cache \

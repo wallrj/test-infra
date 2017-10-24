@@ -65,6 +65,7 @@ presubmits:
     spec:
       containers:
       - image: gcr.io/jetstack-build-infra/minikube-in-go:0.1
+        imagePullPolicy: Always
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/go/src"
