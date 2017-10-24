@@ -56,5 +56,32 @@ presubmits:
           secretName: service-account
     trigger: "(?m)^/test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
+  - name: navigator-e2e
+    always_run: false
+    skip_report: false
+    context: navigator-e2e
+    max_concurrency: 1
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/minikube-in-go:0.4
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/go/src"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+    trigger: "(?m)^/test( all| e2e),?(\\s+|$)"
+    rerun_command: "/test e2e"
 
 postsubmits:
