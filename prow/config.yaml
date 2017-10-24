@@ -54,7 +54,7 @@ presubmits:
       - name: service
         secret:
           secretName: service-account
-    trigger: "(?m)^/test( all| verify| quick verify),?(\\s+|$)"
+    trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
   - name: navigator-e2e
     always_run: false
