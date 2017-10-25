@@ -68,7 +68,7 @@ plugins:
   - hold
   - label
   - lgtm
-  # - milestonestatus
+  - milestonestatus
   - size
   - yuks
   - wip
@@ -86,7 +86,7 @@ plugins:
   - hold
   - label
   - lgtm
-  # - milestonestatus
+  - milestonestatus
   - size
   - yuks
   - wip
