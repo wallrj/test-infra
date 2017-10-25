@@ -7,7 +7,7 @@ triggers:
   - jetstack-experimental/cert-manager
   - jetstack/test-infra
   - jetstack/navigator
-  trusted_org: jetstack-experimental
+  trusted_org: jetstack
 
 # heart:
 #   adorees:
