@@ -39,9 +39,9 @@ plugins:
   - config-updater
 
   jetstack-experimental/cert-manager:
+  - docs-no-retest
   - trigger
   - release-note
-  - docs-no-retest
   - assign
   - close
   - reopen
@@ -57,9 +57,9 @@ plugins:
   - shrug
 
   jetstack/navigator:
+  - docs-no-retest
   - trigger
   - release-note
-  - docs-no-retest
   - assign
   - close
   - reopen
@@ -75,9 +75,9 @@ plugins:
   - shrug
 
   jetstack/tarmak:
+  - docs-no-retest
   - trigger
   - release-note
-  - docs-no-retest
   - assign
   - close
   - reopen
