@@ -13,4 +13,5 @@ spec:
     targetPort: status
   selector:
     app: cherrypick
+    target-repo: @@
   type: ClusterIP
