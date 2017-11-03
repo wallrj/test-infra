@@ -4,7 +4,7 @@
 ---
 triggers:
 - repos:
-  - jetstack-experimental/cert-manager
+  - jetstack/cert-manager
   - jetstack/test-infra
   - jetstack/navigator
   trusted_org: jetstack
@@ -38,7 +38,7 @@ plugins:
   - trigger
   - config-updater
 
-  jetstack-experimental/cert-manager:
+  jetstack/cert-manager:
   - docs-no-retest
   - trigger
   - release-note
