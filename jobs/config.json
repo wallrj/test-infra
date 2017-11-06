@@ -1,9 +1,8 @@
 {
   "puppet-module-kubernetes-quick-verify": {
     "args": [
-      "/bin/bash",
-      "-c",
-      "bundle install && bundle exec rake test"
+      "make",
+      "verify"
     ],
     "scenario": "execute",
     "sigOwners": [
