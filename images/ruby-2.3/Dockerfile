@@ -18,8 +18,17 @@ LABEL maintainer="christian.simon@jetstack.io"
 
 RUN apt-get update && apt-get install -y \
     python \
+    git \
     wget && \
     apt-get clean
+
+ENV GCLOUD_VERSION 163.0.0
+RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
+    tar xf google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz -C / && \
+    rm google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
+    /google-cloud-sdk/install.sh
+ENV PATH "/google-cloud-sdk/bin:${PATH}"
+
 
 WORKDIR /workspace
 ADD runner /
