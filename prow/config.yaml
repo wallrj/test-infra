@@ -135,6 +135,8 @@ presubmits:
     max_concurrency: 10
     agent: kubernetes
     spec:
+      # necessary for vagrant host to guest communication
+      hostNetwork: true
       containers:
       - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
         args:
