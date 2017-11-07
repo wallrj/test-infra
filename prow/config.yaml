@@ -159,6 +159,8 @@ presubmits:
           mountPath: /dev/vboxdrvu
         - name: dev-vboxnetctl
           mountPath: /dev/vboxnetctl
+        - name: vagrant-boxes
+          mountPath: /root/.vagrant.d/boxes
       volumes:
       - name: service
         secret:
@@ -166,6 +168,10 @@ presubmits:
       - name: bundle-cache
         hostPath:
           path: /cache/bundle
+          type: Directory
+      - name: vagrant-boxes
+        hostPath:
+          path: /cache/vagrant-boxes
           type: Directory
       - name: dev-vboxdrv
         hostPath:
