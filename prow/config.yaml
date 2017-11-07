@@ -101,7 +101,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/workspace"
@@ -136,7 +136,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/workspace"
@@ -159,6 +159,8 @@ presubmits:
           mountPath: /dev/vboxdrvu
         - name: dev-vboxnetctl
           mountPath: /dev/vboxnetctl
+        - name: vagrant-boxes
+          mountPath: /root/.vagrant.d/boxes
       volumes:
       - name: service
         secret:
@@ -166,6 +168,10 @@ presubmits:
       - name: bundle-cache
         hostPath:
           path: /cache/bundle
+          type: Directory
+      - name: vagrant-boxes
+        hostPath:
+          path: /cache/vagrant-boxes
           type: Directory
       - name: dev-vboxdrv
         hostPath:
