@@ -38,11 +38,19 @@ spec:
         ports:
           - name: http
             containerPort: 8080
+        args:
+          - --build-cluster=/etc/cluster/cluster
         volumeMounts:
         - name: config
           mountPath: /etc/config
+          readOnly: true
+        - mountPath: /etc/cluster
+          name: cluster
           readOnly: true
       volumes:
       - name: config
         configMap:
           name: config
+      - name: cluster
+        secret:
+          secretName: build-cluster
