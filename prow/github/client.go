@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/shurcooL/githubql"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -40,8 +41,8 @@ type Logger interface {
 }
 
 type Client struct {
-	// If Logger is non-nil, log all method calls with it.
-	Logger Logger
+	// If logger is non-nil, log all method calls with it.
+	logger Logger
 
 	gqlc   *githubql.Client
 	client *http.Client
@@ -65,6 +66,7 @@ const (
 // NewClient creates a new fully operational GitHub client.
 func NewClient(token, base string) *Client {
 	return &Client{
+		logger: logrus.WithField("client", "github"),
 		gqlc:   githubql.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
 		client: &http.Client{},
 		token:  token,
@@ -78,6 +80,7 @@ func NewClient(token, base string) *Client {
 // use up API tokens.
 func NewDryRunClient(token, base string) *Client {
 	return &Client{
+		logger: logrus.WithField("client", "github"),
 		client: &http.Client{},
 		token:  token,
 		base:   base,
@@ -88,20 +91,21 @@ func NewDryRunClient(token, base string) *Client {
 // NewFakeClient creates a new client that will not perform any actions at all.
 func NewFakeClient() *Client {
 	return &Client{
-		fake: true,
-		dry:  true,
+		logger: logrus.WithField("client", "github"),
+		fake:   true,
+		dry:    true,
 	}
 }
 
 func (c *Client) log(methodName string, args ...interface{}) {
-	if c.Logger == nil {
+	if c.logger == nil {
 		return
 	}
 	var as []string
 	for _, arg := range args {
 		as = append(as, fmt.Sprintf("%v", arg))
 	}
-	c.Logger.Debugf("%s(%s)", methodName, strings.Join(as, ", "))
+	c.logger.Debugf("%s(%s)", methodName, strings.Join(as, ", "))
 }
 
 var timeSleep = time.Sleep
@@ -378,10 +382,10 @@ func (c *Client) DeleteStaleComments(org, repo string, number int, comments []Is
 // function should accept that populated slice for each page of
 // results.  An error is returned if encountered in making calls to
 // github or marshalling objects.
-func (c *Client) readPaginatedResults(path string, newObj func() interface{}, accumulate func(interface{})) error {
+func (c *Client) readPaginatedResults(path, accept string, newObj func() interface{}, accumulate func(interface{})) error {
 	url := fmt.Sprintf("%s%s?per_page=100", c.base, path)
 	for url != "" {
-		resp, err := c.requestRetry(http.MethodGet, url, "", nil)
+		resp, err := c.requestRetry(http.MethodGet, url, accept, nil)
 		if err != nil {
 			return err
 		}
@@ -416,7 +420,9 @@ func (c *Client) ListIssueComments(org, repo string, number int) ([]IssueComment
 	}
 	path := fmt.Sprintf("/repos/%s/%s/issues/%d/comments", org, repo, number)
 	var comments []IssueComment
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		"",
 		func() interface{} {
 			return &[]IssueComment{}
 		},
@@ -442,6 +448,41 @@ func (c *Client) GetPullRequest(org, repo string, number int) (*PullRequest, err
 	return &pr, err
 }
 
+// CreatePullRequest creates a new pull request and returns its number if
+// the creation is successful, otherwise any error that is encountered.
+func (c *Client) CreatePullRequest(org, repo, title, body, head, base string, canModify bool) (int, error) {
+	c.log("CreatePullRequest", org, repo, title)
+	data := struct {
+		Title string `json:"title"`
+		Body  string `json:"body"`
+		Head  string `json:"head"`
+		Base  string `json:"base"`
+		// MaintainerCanModify allows maintainers of the repo to modify this
+		// pull request, eg. push changes to it before merging.
+		MaintainerCanModify bool `json:"maintainer_can_modify"`
+	}{
+		Title: title,
+		Body:  body,
+		Head:  head,
+		Base:  base,
+
+		MaintainerCanModify: canModify,
+	}
+	var resp struct {
+		Num int `json:"number"`
+	}
+	_, err := c.request(&request{
+		method:      http.MethodPost,
+		path:        fmt.Sprintf("%s/repos/%s/%s/pulls", c.base, org, repo),
+		requestBody: &data,
+		exitCodes:   []int{201},
+	}, &resp)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Num, nil
+}
+
 // GetPullRequestChanges gets a list of files modified in a pull request.
 func (c *Client) GetPullRequestChanges(org, repo string, number int) ([]PullRequestChange, error) {
 	c.log("GetPullRequestChanges", org, repo, number)
@@ -450,7 +491,9 @@ func (c *Client) GetPullRequestChanges(org, repo string, number int) ([]PullRequ
 	}
 	path := fmt.Sprintf("/repos/%s/%s/pulls/%d/files", org, repo, number)
 	var changes []PullRequestChange
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		"",
 		func() interface{} {
 			return &[]PullRequestChange{}
 		},
@@ -464,7 +507,7 @@ func (c *Client) GetPullRequestChanges(org, repo string, number int) ([]PullRequ
 	return changes, nil
 }
 
-// ListPullRequestComments returns all comments on a pull request. This may use
+// ListPullRequestComments returns all *review* comments on a pull request. This may use
 // more than one API token.
 func (c *Client) ListPullRequestComments(org, repo string, number int) ([]ReviewComment, error) {
 	c.log("ListPullRequestComments", org, repo, number)
@@ -473,7 +516,9 @@ func (c *Client) ListPullRequestComments(org, repo string, number int) ([]Review
 	}
 	path := fmt.Sprintf("/repos/%s/%s/pulls/%d/comments", org, repo, number)
 	var comments []ReviewComment
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		"",
 		func() interface{} {
 			return &[]ReviewComment{}
 		},
@@ -485,6 +530,31 @@ func (c *Client) ListPullRequestComments(org, repo string, number int) ([]Review
 		return nil, err
 	}
 	return comments, nil
+}
+
+// ListReviews returns all reviews on a pull request. This may use
+// more than one API token.
+func (c *Client) ListReviews(org, repo string, number int) ([]Review, error) {
+	c.log("ListReviews", org, repo, number)
+	if c.fake {
+		return nil, nil
+	}
+	path := fmt.Sprintf("/repos/%s/%s/pulls/%d/reviews", org, repo, number)
+	var reviews []Review
+	err := c.readPaginatedResults(
+		path,
+		"",
+		func() interface{} {
+			return &[]Review{}
+		},
+		func(obj interface{}) {
+			reviews = append(reviews, *(obj.(*[]Review))...)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return reviews, nil
 }
 
 // CreateStatus creates or updates the status of a commit.
@@ -580,7 +650,9 @@ func (c *Client) getLabels(path string) ([]Label, error) {
 	if c.fake {
 		return labels, nil
 	}
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		"",
 		func() interface{} {
 			return &[]Label{}
 		},
@@ -843,6 +915,7 @@ func (c *Client) ReopenIssue(org, repo string, number int) error {
 }
 
 // ClosePR closes the existing, open PR provided
+// TODO: Rename to ClosePullRequest
 func (c *Client) ClosePR(org, repo string, number int) error {
 	c.log("ClosePR", org, repo, number)
 	_, err := c.request(&request{
@@ -855,6 +928,7 @@ func (c *Client) ClosePR(org, repo string, number int) error {
 }
 
 // ReopenPR re-opens the existing, closed PR provided
+// TODO: Rename to ReopenPullRequest
 func (c *Client) ReopenPR(org, repo string, number int) error {
 	c.log("ReopenPR", org, repo, number)
 	_, err := c.request(&request{
@@ -966,7 +1040,9 @@ func (c *Client) ListTeams(org string) ([]Team, error) {
 	}
 	path := fmt.Sprintf("/orgs/%s/teams", org)
 	var teams []Team
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		"",
 		func() interface{} {
 			return &[]Team{}
 		},
@@ -988,7 +1064,11 @@ func (c *Client) ListTeamMembers(id int) ([]TeamMember, error) {
 	}
 	path := fmt.Sprintf("/teams/%d/members", id)
 	var teamMembers []TeamMember
-	err := c.readPaginatedResults(path,
+	err := c.readPaginatedResults(
+		path,
+		// This accept header enables the nested teams preview.
+		// https://developer.github.com/changes/2017-08-30-preview-nested-teams/
+		"application/vnd.github.hellcat-preview+json",
 		func() interface{} {
 			return &[]TeamMember{}
 		},
@@ -1045,4 +1125,75 @@ func (c *Client) Merge(org, repo string, pr int, details MergeDetails) error {
 	}
 
 	return nil
+}
+
+// ListCollaborators gets a list of all users who have access to a repo (and can become assignees
+// or requested reviewers). This includes, org members with access, outside collaborators, and org
+// owners.
+func (c *Client) ListCollaborators(org, repo string) ([]User, error) {
+	c.log("ListCollaborators", org, repo)
+	if c.fake {
+		return nil, nil
+	}
+	path := fmt.Sprintf("/repos/%s/%s/collaborators", org, repo)
+	var users []User
+	err := c.readPaginatedResults(
+		path,
+		// This accept header enables the nested teams preview.
+		// https://developer.github.com/changes/2017-08-30-preview-nested-teams/
+		"application/vnd.github.hellcat-preview+json",
+		func() interface{} {
+			return &[]User{}
+		},
+		func(obj interface{}) {
+			users = append(users, *(obj.(*[]User))...)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// CreateFork creates a fork for the authenticated user. Forking a repository
+// happens asynchronously. Therefore, we may have to wait a short period before
+// accessing the git objects. If this takes longer than 5 minutes, Github
+// recommends contacting their support.
+//
+// See https://developer.github.com/v3/repos/forks/#create-a-fork
+func (c *Client) CreateFork(owner, repo string) error {
+	c.log("CreateFork", owner, repo)
+	_, err := c.request(&request{
+		method:    http.MethodPost,
+		path:      fmt.Sprintf("%s/repos/%s/%s/forks", c.base, owner, repo),
+		exitCodes: []int{202},
+	}, nil)
+	return err
+}
+
+// ListIssueEvents gets a list events from github's events API that pertain to the specified issue.
+// The events that are returned have a different format than webhook events and certain event types
+// are excluded.
+// https://developer.github.com/v3/issues/events/
+func (c *Client) ListIssueEvents(org, repo string, num int) ([]ListedIssueEvent, error) {
+	c.log("ListIssueEvents", org, repo, num)
+	if c.fake {
+		return nil, nil
+	}
+	path := fmt.Sprintf("/repos/%s/%s/issues/%d/events", org, repo, num)
+	var events []ListedIssueEvent
+	err := c.readPaginatedResults(
+		path,
+		"",
+		func() interface{} {
+			return &[]ListedIssueEvent{}
+		},
+		func(obj interface{}) {
+			events = append(events, *(obj.(*[]ListedIssueEvent))...)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
 }

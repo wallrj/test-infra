@@ -15,17 +15,28 @@
 all: build test
 
 
+# ALPINE_VERSION is the version of the alpine image
 ALPINE_VERSION           ?= 0.1
+# GIT_VERSION is the version of the alpine+git image
 GIT_VERSION              ?= 0.1
-HOOK_VERSION             ?= 0.174
+# HOOK_VERSION is the version of the hook image
+HOOK_VERSION             ?= 0.176
+# SINKER_VERSION is the version of the sinker image
 SINKER_VERSION           ?= 0.21
-DECK_VERSION             ?= 0.54
+# DECK_VERSION is the version of the deck image
+DECK_VERSION             ?= 0.58
+# SPLICE_VERSION is the version of the splice image
 SPLICE_VERSION           ?= 0.28
+# TOT_VERSION is the version of the tot image
 TOT_VERSION              ?= 0.5
-HOROLOGIUM_VERSION       ?= 0.10
-PLANK_VERSION            ?= 0.52
-JENKINS-OPERATOR_VERSION ?= 0.48
-TIDE_VERSION             ?= 0.7
+# HOROLOGIUM_VERSION is the version of the horologium image
+HOROLOGIUM_VERSION       ?= 0.11
+# PLANK_VERSION is the version of the plank image
+PLANK_VERSION            ?= 0.55
+# JENKINS-OPERATOR_VERSION is the version of the jenkins-operator image
+JENKINS-OPERATOR_VERSION ?= 0.51
+# TIDE_VERSION is the version of the tide image
+TIDE_VERSION             ?= 0.8
 
 # These are the usual GKE variables.
 PROJECT       ?= jetstack-build-infra
@@ -134,8 +145,8 @@ plank-deployment: get-cluster-credentials
 
 jenkins-operator-image: alpine-image
 	CGO_ENABLED=0 go build -o cmd/jenkins-operator/jenkins-operator k8s.io/test-infra/prow/cmd/jenkins-operator
-	docker build -t "$(REGISTRY)/$(PROJECT)/jenkins-operator:$(JENKINS_VERSION)" $(DOCKER_LABELS) cmd/jenkins-operator
-	$(PUSH) "$(REGISTRY)/$(PROJECT)/jenkins-operator:$(JENKINS_VERSION)"
+	docker build -t "$(REGISTRY)/$(PROJECT)/jenkins-operator:$(JENKINS-OPERATOR_VERSION)" $(DOCKER_LABELS) cmd/jenkins-operator
+	$(PUSH) "$(REGISTRY)/$(PROJECT)/jenkins-operator:$(JENKINS-OPERATOR_VERSION)"
 
 jenkins-operator-deployment: get-cluster-credentials
 	kubectl apply -f cluster/jenkins_deployment.yaml

@@ -89,25 +89,18 @@ func main() {
 	}
 	defer gc.Clean()
 
-	logger := logrus.StandardLogger()
-	ghc.Logger = logger.WithField("client", "github")
-	kc.Logger = logger.WithField("client", "kube")
-	gc.Logger = logger.WithField("client", "git")
-
-	c := tide.NewController(ghc, kc, configAgent, gc)
-	c.Logger = logger.WithField("controller", "tide")
-	c.DryRun = *dryRun
+	c := tide.NewController(ghc, kc, configAgent, gc, *dryRun)
 
 	sync(c)
 	if *runOnce {
 		return
 	}
-	go func(c *tide.Controller) {
+	go func() {
 		for range time.Tick(time.Minute) {
 			sync(c)
 		}
-	}(c)
-	logrus.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))
+	}()
+	logrus.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), c))
 }
 
 func sync(c *tide.Controller) {

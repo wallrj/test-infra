@@ -17,8 +17,15 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -26,13 +33,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	flag "github.com/spf13/pflag"
 )
 
 var (
 	// kops specific flags.
-	kopsPath         = flag.String("kops", "", "(kops only) Path to the kops binary. Must be set for kops.")
+	kopsPath         = flag.String("kops", "", "(kops only) Path to the kops binary. kops will be downloaded from kops-base-url if not set.")
 	kopsCluster      = flag.String("kops-cluster", "", "(kops only) Deprecated. Cluster name for kops; if not set defaults to --cluster.")
 	kopsState        = flag.String("kops-state", "", "(kops only) s3:// path to kops state store. Must be set.")
 	kopsSSHKey       = flag.String("kops-ssh-key", "", "(kops only) Path to ssh key-pair for each node (defaults '~/.ssh/kube_aws_rsa' if unset.)")
@@ -44,12 +49,13 @@ var (
 	kopsImage        = flag.String("kops-image", "", "(kops only) Image (AMI) for nodes to use. (Defaults to kops default, a Debian image with a custom kubernetes kernel.)")
 	kopsArgs         = flag.String("kops-args", "", "(kops only) Additional space-separated args to pass unvalidated to 'kops create cluster', e.g. '--kops-args=\"--dns private --node-size t2.micro\"'")
 	kopsPriorityPath = flag.String("kops-priority-path", "", "Insert into PATH if set")
+	kopsBaseURL      = flag.String("kops-base-url", "", "Base URL for a prebuilt version of kops")
+	kopsVersion      = flag.String("kops-version", "", "URL to a file containing a valid kops-base-url")
 )
 
 type kops struct {
 	path        string
 	kubeVersion string
-	sshKey      string
 	zones       []string
 	nodes       int
 	adminAccess string
@@ -57,6 +63,11 @@ type kops struct {
 	image       string
 	args        string
 	kubecfg     string
+
+	// sshPublicKey is the path to the SSH public key matching sshPrivateKey
+	sshPublicKey string
+	// sshPublicKey is the path to the SSH private key matching sshPublicKey
+	sshPrivateKey string
 
 	// GCP project we should use
 	gcpProject string
@@ -91,11 +102,13 @@ func migrateKopsEnv() error {
 }
 
 func newKops(provider, gcpProject, cluster string) (*kops, error) {
-	if err := migrateKopsEnv(); err != nil {
+	tmpdir, err := ioutil.TempDir("", "kops")
+	if err != nil {
 		return nil, err
 	}
-	if *kopsPath == "" {
-		return nil, fmt.Errorf("--kops must be set to a valid binary path for kops deployment")
+
+	if err := migrateKopsEnv(); err != nil {
+		return nil, err
 	}
 
 	if *kopsCluster != "" {
@@ -125,18 +138,21 @@ func newKops(provider, gcpProject, cluster string) (*kops, error) {
 	if err := os.Setenv("KOPS_STATE_STORE", *kopsState); err != nil {
 		return nil, err
 	}
-	f, err := ioutil.TempFile("", "kops-kubecfg")
+
+	// Repoint KUBECONFIG to an isolated kubeconfig in our temp directory
+	kubecfg := filepath.Join(tmpdir, "kubeconfig")
+	f, err := os.Create(kubecfg)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	kubecfg := f.Name()
 	if err := f.Chmod(0600); err != nil {
 		return nil, err
 	}
 	if err := os.Setenv("KUBECONFIG", kubecfg); err != nil {
 		return nil, err
 	}
+
 	// Set KUBERNETES_CONFORMANCE_TEST so the auth info is picked up
 	// from kubectl instead of bash inference.
 	if err := os.Setenv("KUBERNETES_CONFORMANCE_TEST", "yes"); err != nil {
@@ -156,19 +172,70 @@ func newKops(provider, gcpProject, cluster string) (*kops, error) {
 	if err := os.Setenv("ZONE", zones[0]); err != nil {
 		return nil, err
 	}
+
+	// Set kops-base-url from kops-version
+	if *kopsVersion != "" {
+		if *kopsBaseURL != "" {
+			return nil, fmt.Errorf("cannot set --kops-version and --kops-base-url")
+		}
+
+		var b bytes.Buffer
+		if err := httpRead(*kopsVersion, &b); err != nil {
+			return nil, err
+		}
+		latest := strings.TrimSpace(b.String())
+
+		log.Printf("Got latest kops version from %v: %v", *kopsVersion, latest)
+		if latest == "" {
+			return nil, fmt.Errorf("version URL %v was empty", *kopsVersion)
+		}
+		*kopsBaseURL = latest
+	}
+
+	// kops looks at KOPS_BASE_URL env var, so export it here
+	if *kopsBaseURL != "" {
+		if err := os.Setenv("KOPS_BASE_URL", *kopsBaseURL); err != nil {
+			return nil, err
+		}
+	}
+
+	// Download kops from kopsBaseURL if kopsPath is not set
+	if *kopsPath == "" {
+		if *kopsBaseURL == "" {
+			return nil, fmt.Errorf("--kops or --kops-base-url must be set")
+		}
+
+		kopsBinURL := *kopsBaseURL + "/linux/amd64/kops"
+		log.Printf("Download kops binary from %s", kopsBinURL)
+		kopsBin := filepath.Join(tmpdir, "kops")
+		f, err := os.Create(kopsBin)
+		if err != nil {
+			return nil, fmt.Errorf("error creating file %q: %v", kopsBin, err)
+		}
+		defer f.Close()
+		if err := httpRead(kopsBinURL, f); err != nil {
+			return nil, err
+		}
+		if err := ensureExecutable(kopsBin); err != nil {
+			return nil, err
+		}
+		*kopsPath = kopsBin
+	}
+
 	return &kops{
-		path:        *kopsPath,
-		kubeVersion: *kopsKubeVersion,
-		sshKey:      sshKey + ".pub", // kops only needs the public key, e2es need the private key.
-		zones:       zones,
-		nodes:       *kopsNodes,
-		adminAccess: *kopsAdminAccess,
-		cluster:     cluster,
-		image:       *kopsImage,
-		args:        *kopsArgs,
-		kubecfg:     kubecfg,
-		provider:    provider,
-		gcpProject:  gcpProject,
+		path:          *kopsPath,
+		kubeVersion:   *kopsKubeVersion,
+		sshPrivateKey: sshKey,
+		sshPublicKey:  sshKey + ".pub",
+		zones:         zones,
+		nodes:         *kopsNodes,
+		adminAccess:   *kopsAdminAccess,
+		cluster:       cluster,
+		image:         *kopsImage,
+		args:          *kopsArgs,
+		kubecfg:       kubecfg,
+		provider:      provider,
+		gcpProject:    gcpProject,
 	}, nil
 }
 
@@ -177,12 +244,25 @@ func (k kops) isGoogleCloud() bool {
 }
 
 func (k kops) Up() error {
+	// If we downloaded kubernetes, pass that version to kops
+	if k.kubeVersion == "" {
+		// TODO(justinsb): figure out a refactor that allows us to get this from acquireKubernetes cleanly
+		kubeReleaseUrl := os.Getenv("KUBERNETES_RELEASE_URL")
+		kubeRelease := os.Getenv("KUBERNETES_RELEASE")
+		if kubeReleaseUrl != "" && kubeRelease != "" {
+			if !strings.HasSuffix(kubeReleaseUrl, "/") {
+				kubeReleaseUrl += "/"
+			}
+			k.kubeVersion = kubeReleaseUrl + kubeRelease
+		}
+	}
+
 	var featureFlags []string
 
 	createArgs := []string{
 		"create", "cluster",
 		"--name", k.cluster,
-		"--ssh-public-key", k.sshKey,
+		"--ssh-public-key", k.sshPublicKey,
 		"--node-count", strconv.Itoa(k.nodes),
 		"--zones", strings.Join(k.zones, ","),
 	}
@@ -191,6 +271,10 @@ func (k kops) Up() error {
 	}
 	if k.adminAccess != "" {
 		createArgs = append(createArgs, "--admin-access", k.adminAccess)
+
+		// Enable nodeport access from the same IP (we expect it to be the test IPs)
+		featureFlags = append(featureFlags, "SpecOverrideFlag")
+		createArgs = append(createArgs, "--override", "cluster.spec.nodePortAccess="+k.adminAccess)
 	}
 	if k.image != "" {
 		createArgs = append(createArgs, "--image", k.image)
@@ -218,7 +302,7 @@ func (k kops) Up() error {
 	// TODO(zmerlynn): More cluster validation. This should perhaps be
 	// added to kops and not here, but this is a fine place to loop
 	// for now.
-	return waitForNodes(k, k.nodes+1, *kopsUpTimeout)
+	return waitForReadyNodes(k.nodes+1, *kopsUpTimeout)
 }
 
 func (k kops) IsUp() error {
@@ -226,21 +310,111 @@ func (k kops) IsUp() error {
 }
 
 func (k kops) DumpClusterLogs(localPath, gcsPath string) error {
-	return defaultDumpClusterLogs(localPath, gcsPath)
+	privateKeyPath := k.sshPrivateKey
+	if strings.HasPrefix(privateKeyPath, "~/") {
+		privateKeyPath = filepath.Join(os.Getenv("HOME"), privateKeyPath[2:])
+	}
+	key, err := ioutil.ReadFile(privateKeyPath)
+	if err != nil {
+		return fmt.Errorf("error reading private key %q: %v", k.sshPrivateKey, err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return fmt.Errorf("error parsing private key %q: %v", k.sshPrivateKey, err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+		User: "admin",
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	sshClientFactory := &sshClientFactoryImplementation{
+		sshConfig: sshConfig,
+	}
+	logDumper, err := newLogDumper(sshClientFactory, localPath)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	finished := make(chan error)
+	go func() {
+		finished <- k.dumpAllNodes(ctx, logDumper)
+	}()
+
+	for {
+		select {
+		case <-interrupt.C:
+			cancel()
+		case err := <-finished:
+			return err
+		}
+	}
+}
+
+// dumpAllNodes connects to every node and dumps the logs
+func (k *kops) dumpAllNodes(ctx context.Context, d *logDumper) error {
+	// Make sure kubeconfig is set, in particular before calling DumpAllNodes, which calls kubectlGetNodes
+	if err := k.TestSetup(); err != nil {
+		return fmt.Errorf("error setting up kubeconfig: %v", err)
+	}
+
+	var additionalIPs []string
+	dump, err := runKopsDump(k.cluster)
+	if err != nil {
+		log.Printf("unable to get cluster status from kops: %v", err)
+	} else {
+		for _, instance := range dump.Instances {
+			name := instance.Name
+
+			if len(instance.PublicAddresses) == 0 {
+				log.Printf("ignoring instance in kops status with no public address: %v", name)
+				continue
+			}
+
+			additionalIPs = append(additionalIPs, instance.PublicAddresses[0])
+		}
+	}
+
+	if err := d.DumpAllNodes(ctx, additionalIPs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (k kops) TestSetup() error {
 	info, err := os.Stat(k.kubecfg)
 	if err != nil {
-		return err
-	}
-	if info.Size() > 0 {
+		if os.IsNotExist(err) {
+			log.Printf("kubeconfig file %s not found", k.kubecfg)
+		} else {
+			return err
+		}
+	} else if info.Size() > 0 {
 		// Assume that if we already have it, it's good.
 		return nil
 	}
+
 	if err := finishRunning(exec.Command(k.path, "export", "kubecfg", k.cluster)); err != nil {
-		return fmt.Errorf("Failure exporting kops kubecfg: %v", err)
+		return fmt.Errorf("failure from 'kops export kubecfg %s': %v", k.cluster, err)
 	}
+
+	// Double-check that the file was exported
+	info, err = os.Stat(k.kubecfg)
+	if err != nil {
+		return fmt.Errorf("kubeconfig file %s was not exported", k.kubecfg)
+	}
+	if info.Size() == 0 {
+		return fmt.Errorf("exported kubeconfig file %s was empty", k.kubecfg)
+	}
+
 	return nil
 }
 
@@ -254,4 +428,45 @@ func (k kops) Down() error {
 		return nil
 	}
 	return finishRunning(exec.Command(k.path, "delete", "cluster", k.cluster, "--yes"))
+}
+
+func (k kops) GetClusterCreated(gcpProject string) (time.Time, error) {
+	return time.Time{}, errors.New("not implemented")
+}
+
+// kopsDump is the format of data as dumped by `kops toolbox dump -ojson`
+type kopsDump struct {
+	Instances []*kopsDumpInstance `json:"instances"`
+}
+
+// String implements fmt.Stringer
+func (o *kopsDump) String() string {
+	return jsonForDebug(o)
+}
+
+// kopsDumpInstance is the format of an instance (machine) in a kops dump
+type kopsDumpInstance struct {
+	Name            string   `json:"name"`
+	PublicAddresses []string `json:"publicAddresses"`
+}
+
+// String implements fmt.Stringer
+func (o *kopsDumpInstance) String() string {
+	return jsonForDebug(o)
+}
+
+// runKopsDump runs a kops toolbox dump to dump the status of the cluster
+func runKopsDump(clusterName string) (*kopsDump, error) {
+	o, err := output(exec.Command("kops", "toolbox", "dump", "--name", clusterName, "-ojson"))
+	if err != nil {
+		log.Printf("error running kops toolbox dump: %s\n%s", wrapError(err).Error(), string(o))
+		return nil, err
+	}
+
+	dump := &kopsDump{}
+	if err := json.Unmarshal(o, dump); err != nil {
+		return nil, fmt.Errorf("error parsing kops toolbox dump output: %v", err)
+	}
+
+	return dump, nil
 }

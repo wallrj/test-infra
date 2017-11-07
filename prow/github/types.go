@@ -18,6 +18,7 @@ package github
 
 import (
 	"strings"
+	"time"
 )
 
 // These are possible State entries for a Status.
@@ -104,6 +105,7 @@ type PullRequestEvent struct {
 	PullRequest PullRequest            `json:"pull_request"`
 	Repo        Repo                   `json:"repository"`
 	Label       Label                  `json:"label"`
+	Sender      User                   `json:"sender"`
 }
 
 // PullRequest contains information about a PullRequest.
@@ -119,6 +121,8 @@ type PullRequest struct {
 	Assignees          []User            `json:"assignees"`
 	State              string            `json:"state"`
 	Merged             bool              `json:"merged"`
+	CreatedAt          time.Time         `json:"created_at,omitempty"`
+	UpdatedAt          time.Time         `json:"updated_at,omitempty"`
 	// ref https://developer.github.com/v3/pulls/#get-a-single-pull-request
 	// If Merged is true, MergeSHA is the SHA of the merge commit, or squashed commit
 	// If Merged is false, MergeSHA is a commit SHA that github created to test if
@@ -167,6 +171,7 @@ type Repo struct {
 	Name     string `json:"name"`
 	FullName string `json:"full_name"`
 	HTMLURL  string `json:"html_url"`
+	Fork     bool   `json:"fork"`
 }
 
 // IssueEventAction enumerates the triggers for this
@@ -187,10 +192,20 @@ const (
 	IssueActionReopened                      = "reopened"
 )
 
+// IssueEvent represents an issue event from a webhook payload (not from the events API).
 type IssueEvent struct {
 	Action IssueEventAction `json:"action"`
 	Issue  Issue            `json:"issue"`
 	Repo   Repo             `json:"repository"`
+}
+
+// ListedIssueEvent represents an issue event from the events API (not from a webhook payload).
+// https://developer.github.com/v3/issues/events/
+type ListedIssueEvent struct {
+	Event     IssueEventAction `json:"event"` // This is the same as IssueEvent.Action.
+	Actor     User             `json:"actor"`
+	Label     Label            `json:"label"`
+	CreatedAt time.Time        `json:"created_at"`
 }
 
 // IssueCommentEventAction enumerates the triggers for this
@@ -212,14 +227,16 @@ type IssueCommentEvent struct {
 }
 
 type Issue struct {
-	User      User    `json:"user"`
-	Number    int     `json:"number"`
-	Title     string  `json:"title"`
-	State     string  `json:"state"`
-	HTMLURL   string  `json:"html_url"`
-	Labels    []Label `json:"labels"`
-	Assignees []User  `json:"assignees"`
-	Body      string  `json:"body"`
+	User      User      `json:"user"`
+	Number    int       `json:"number"`
+	Title     string    `json:"title"`
+	State     string    `json:"state"`
+	HTMLURL   string    `json:"html_url"`
+	Labels    []Label   `json:"labels"`
+	Assignees []User    `json:"assignees"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
 	// This will be non-nil if it is a pull request.
 	PullRequest *struct{} `json:"pull_request,omitempty"`
@@ -252,10 +269,12 @@ func (i Issue) HasLabel(labelToFind string) bool {
 }
 
 type IssueComment struct {
-	ID      int    `json:"id,omitempty"`
-	Body    string `json:"body"`
-	User    User   `json:"user,omitempty"`
-	HTMLURL string `json:"html_url,omitempty"`
+	ID        int       `json:"id,omitempty"`
+	Body      string    `json:"body"`
+	User      User      `json:"user,omitempty"`
+	HTMLURL   string    `json:"html_url,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 type StatusEvent struct {
@@ -323,11 +342,12 @@ type ReviewEvent struct {
 
 // Review describes a Pull Request review.
 type Review struct {
-	ID      int    `json:"id"`
-	User    User   `json:"user"`
-	Body    string `json:"body"`
-	State   string `json:"state"`
-	HTMLURL string `json:"html_url"`
+	ID          int       `json:"id"`
+	User        User      `json:"user"`
+	Body        string    `json:"body"`
+	State       string    `json:"state"`
+	HTMLURL     string    `json:"html_url"`
+	SubmittedAt time.Time `json:"submitted_at"`
 }
 
 // ReviewCommentEventAction enumerates the triggers for this
@@ -351,12 +371,14 @@ type ReviewCommentEvent struct {
 
 // ReviewComment describes a Pull Request review.
 type ReviewComment struct {
-	ID       int    `json:"id"`
-	ReviewID int    `json:"pull_request_review_id"`
-	User     User   `json:"user"`
-	Body     string `json:"body"`
-	Path     string `json:"path"`
-	HTMLURL  string `json:"html_url"`
+	ID        int       `json:"id"`
+	ReviewID  int       `json:"pull_request_review_id"`
+	User      User      `json:"user"`
+	Body      string    `json:"body"`
+	Path      string    `json:"path"`
+	HTMLURL   string    `json:"html_url"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	// Position will be nil if the code has changed such that the comment is no
 	// longer relevant.
 	Position *int `json:"position"`
@@ -417,15 +439,28 @@ const (
 	GenericCommentActionDeleted                           = "deleted" // "dismissed"
 )
 
+// GenericCommentEvent is a fake event type that is instantiated for any github event that contains
+// comment like content.
+// The specific events that are also handled as GenericCommentEvents are:
+// - issue_comment events
+// - pull_request_review events
+// - pull_request_review_comment events
+// - pull_request events with action in ["opened", "edited"]
+// - issue events with action in ["opened", "edited"]
+//
+// Issue and PR "closed" events are not coerced to the "deleted" Action and do not trigger
+// a GenericCommentEvent because these events don't actually remove the comment content from GH.
 type GenericCommentEvent struct {
-	IsPR        bool
-	Action      GenericCommentEventAction
-	Body        string
-	HTMLURL     string
-	Number      int
-	Repo        Repo
-	User        User
-	IssueAuthor User
-	Assignees   []User
-	IssueState  string
+	IsPR         bool
+	Action       GenericCommentEventAction
+	Body         string
+	HTMLURL      string
+	Number       int
+	Repo         Repo
+	User         User
+	IssueAuthor  User
+	Assignees    []User
+	IssueState   string
+	IssueBody    string
+	IssueHTMLURL string
 }

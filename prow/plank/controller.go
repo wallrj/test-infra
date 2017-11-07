@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,11 +45,11 @@ const (
 
 type kubeClient interface {
 	CreateProwJob(kube.ProwJob) (kube.ProwJob, error)
-	ListProwJobs(map[string]string) ([]kube.ProwJob, error)
+	ListProwJobs(string) ([]kube.ProwJob, error)
 	ReplaceProwJob(string, kube.ProwJob) (kube.ProwJob, error)
 
 	CreatePod(kube.Pod) (kube.Pod, error)
-	ListPods(map[string]string) ([]kube.Pod, error)
+	ListPods(string) ([]kube.Pod, error)
 	DeletePod(string) error
 }
 
@@ -77,6 +78,8 @@ type Controller struct {
 	ca     configAgent
 	node   *snowflake.Node
 	totURL string
+	// selector that will be applied on prowjobs and pods.
+	selector string
 
 	lock sync.RWMutex
 	// pendingJobs is a short-lived cache that helps in limiting
@@ -124,7 +127,7 @@ func (c *Controller) incrementNumPendingJobs(job string) {
 }
 
 // NewController creates a new Controller from the provided clients.
-func NewController(kc, pkc *kube.Client, ghc *github.Client, ca *config.Agent, totURL string) (*Controller, error) {
+func NewController(kc, pkc *kube.Client, ghc *github.Client, ca *config.Agent, totURL, selector string) (*Controller, error) {
 	n, err := snowflake.NewNode(1)
 	if err != nil {
 		return nil, err
@@ -136,19 +139,19 @@ func NewController(kc, pkc *kube.Client, ghc *github.Client, ca *config.Agent, t
 		ca:          ca,
 		node:        n,
 		pendingJobs: make(map[string]int),
-		lock:        sync.RWMutex{},
 		totURL:      totURL,
+		selector:    selector,
 	}, nil
 }
 
 // Sync does one sync iteration.
 func (c *Controller) Sync() error {
-	pjs, err := c.kc.ListProwJobs(nil)
+	pjs, err := c.kc.ListProwJobs(c.selector)
 	if err != nil {
 		return fmt.Errorf("error listing prow jobs: %v", err)
 	}
-	labels := map[string]string{kube.CreatedByProw: "true"}
-	pods, err := c.pkc.ListPods(labels)
+	selector := strings.Join([]string{c.selector, fmt.Sprintf("%s=true", kube.CreatedByProw)}, ",")
+	pods, err := c.pkc.ListPods(selector)
 	if err != nil {
 		return fmt.Errorf("error listing pods: %v", err)
 	}
@@ -156,7 +159,8 @@ func (c *Controller) Sync() error {
 	for _, pod := range pods {
 		pm[pod.Metadata.Name] = pod
 	}
-
+	// TODO: Replace the following filtering with a field selector once CRDs support field selectors.
+	// https://github.com/kubernetes/kubernetes/issues/53459
 	var k8sJobs []kube.ProwJob
 	for _, pj := range pjs {
 		if pj.Spec.Agent == kube.KubernetesAgent {
@@ -297,11 +301,11 @@ func (c *Controller) syncPendingJob(pj kube.ProwJob, pm map[string]kube.Pod, rep
 			pj.Status.State = kube.SuccessState
 			pj.Status.Description = "Job succeeded."
 			for _, nj := range pj.Spec.RunAfterSuccess {
-				child := pjutil.NewProwJob(nj)
+				child := pjutil.NewProwJob(nj, pj.Metadata.Labels)
 				if !RunAfterSuccessCanRun(&pj, &child, c.ca, c.ghc) {
 					continue
 				}
-				if _, err := c.kc.CreateProwJob(pjutil.NewProwJob(nj)); err != nil {
+				if _, err := c.kc.CreateProwJob(pjutil.NewProwJob(nj, pj.Metadata.Labels)); err != nil {
 					return fmt.Errorf("error starting next prowjob: %v", err)
 				}
 			}
@@ -397,7 +401,10 @@ func (c *Controller) startPod(pj kube.ProwJob) (string, string, error) {
 		return "", "", fmt.Errorf("error getting build ID: %v", err)
 	}
 
-	pod := pjutil.ProwJobToPod(pj, buildID)
+	pod, err := pjutil.ProwJobToPod(pj, buildID)
+	if err != nil {
+		return "", "", err
+	}
 
 	actual, err := c.pkc.CreatePod(*pod)
 	if err != nil {
