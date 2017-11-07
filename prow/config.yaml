@@ -144,6 +144,8 @@ presubmits:
         - "--root=/workspace"
         - "--upload=gs://jetstack-logs/pr-logs"
         - "--clean"
+        securityContext:
+         privileged: true
         env:
         - name: BUNDLE_DIR
           value: /cache/bundle
