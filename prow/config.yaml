@@ -101,7 +101,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/workspace"
@@ -136,7 +136,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/workspace"

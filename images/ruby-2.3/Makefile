@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION = 0.3
+VERSION = 0.4
 
 image:
 	docker build -t "gcr.io/jetstack-build-infra/ruby-2.3:$(VERSION)" .
