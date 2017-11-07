@@ -27,6 +27,110 @@ log_level: info
 # push_gateway:
 #   endpoint: pushgateway
 
+
+# job templates
+
+# puppet module verify using ruby tooling
+.puppet_module_verify: &puppet_module_verify
+  always_run: true
+  skip_report: false
+  max_concurrency: 10
+  agent: kubernetes
+  spec:
+    containers:
+    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
+      args:
+      - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      - "--root=/workspace"
+      - "--upload=gs://jetstack-logs/pr-logs"
+      - "--clean"
+      env:
+      - name: BUNDLE_DIR
+        value: /cache/bundle
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/service-account/service-account.json
+      volumeMounts:
+      - name: service
+        mountPath: /etc/service-account
+        readOnly: true
+      - name: bundle-cache
+        mountPath: /cache/bundle
+    volumes:
+    - name: service
+      secret:
+        secretName: service-account
+    - name: bundle-cache
+      hostPath:
+        path: /cache/bundle
+        type: Directory
+  trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
+  rerun_command: "/test verify"
+
+# puppet module acceptance tests using ruby tooling, elevated privileges due
+# to requirement to run nested VMs
+.puppet_module_acceptance: &puppet_module_acceptance
+  always_run: true
+  skip_report: false
+  max_concurrency: 2
+  agent: kubernetes
+  spec:
+    # necessary for vagrant host to guest communication
+    hostNetwork: true
+    containers:
+    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
+      args:
+      - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      - "--root=/workspace"
+      - "--upload=gs://jetstack-logs/pr-logs"
+      - "--clean"
+      securityContext:
+       privileged: true
+      env:
+      - name: BUNDLE_DIR
+        value: /cache/bundle
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/service-account/service-account.json
+      volumeMounts:
+      - name: service
+        mountPath: /etc/service-account
+        readOnly: true
+      - name: bundle-cache
+        mountPath: /cache/bundle
+      - name: dev-vboxdrv
+        mountPath: /dev/vboxdrv
+      - name: dev-vboxdrvu
+        mountPath: /dev/vboxdrvu
+      - name: dev-vboxnetctl
+        mountPath: /dev/vboxnetctl
+      - name: vagrant-boxes
+        mountPath: /root/.vagrant.d/boxes
+    volumes:
+    - name: service
+      secret:
+        secretName: service-account
+    - name: bundle-cache
+      hostPath:
+        path: /cache/bundle
+        type: Directory
+    - name: vagrant-boxes
+      hostPath:
+        path: /cache/vagrant-boxes
+        type: Directory
+    - name: dev-vboxdrv
+      hostPath:
+        path: /dev/vboxdrv
+        type: CharDevice
+    - name: dev-vboxdrvu
+      hostPath:
+        path: /dev/vboxdrvu
+        type: CharDevice
+    - name: dev-vboxnetctl
+      hostPath:
+        path: /dev/vboxnetctl
+        type: CharDevice
+  trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
+  rerun_command: "/test acceptance"
+
 presubmits:
   jetstack/navigator:
   - name: navigator-quick-verify
@@ -93,99 +197,11 @@ presubmits:
     rerun_command: "/test e2e"
 
   jetstack/puppet-module-kubernetes:
-  - name: puppet-module-kubernetes-quick-verify
-    always_run: true
-    skip_report: false
+  - <<: *puppet_module_verify
+    name: puppet-module-kubernetes-quick-verify
     context: puppet-module-kubernetes-quick-verify
-    max_concurrency: 10
-    agent: kubernetes
-    spec:
-      containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
-        args:
-        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
-        - "--root=/workspace"
-        - "--upload=gs://jetstack-logs/pr-logs"
-        - "--clean"
-        env:
-        - name: BUNDLE_DIR
-          value: /cache/bundle
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /etc/service-account/service-account.json
-        volumeMounts:
-        - name: service
-          mountPath: /etc/service-account
-          readOnly: true
-        - name: bundle-cache
-          mountPath: /cache/bundle
-      volumes:
-      - name: service
-        secret:
-          secretName: service-account
-      - name: bundle-cache
-        hostPath:
-          path: /cache/bundle
-          type: Directory
-    trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
-    rerun_command: "/test verify"
-  - name: puppet-module-kubernetes-acceptance
-    always_run: true
-    skip_report: false
+  - <<: *puppet_module_acceptance
+    name: puppet-module-kubernetes-acceptance
     context: puppet-module-kubernetes-acceptance
-    max_concurrency: 10
-    agent: kubernetes
-    spec:
-      containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
-        args:
-        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
-        - "--root=/workspace"
-        - "--upload=gs://jetstack-logs/pr-logs"
-        - "--clean"
-        env:
-        - name: BUNDLE_DIR
-          value: /cache/bundle
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /etc/service-account/service-account.json
-        volumeMounts:
-        - name: service
-          mountPath: /etc/service-account
-          readOnly: true
-        - name: bundle-cache
-          mountPath: /cache/bundle
-        - name: dev-vboxdrv
-          mountPath: /dev/vboxdrv
-        - name: dev-vboxdrvu
-          mountPath: /dev/vboxdrvu
-        - name: dev-vboxnetctl
-          mountPath: /dev/vboxnetctl
-        - name: vagrant-boxes
-          mountPath: /root/.vagrant.d/boxes
-      volumes:
-      - name: service
-        secret:
-          secretName: service-account
-      - name: bundle-cache
-        hostPath:
-          path: /cache/bundle
-          type: Directory
-      - name: vagrant-boxes
-        hostPath:
-          path: /cache/vagrant-boxes
-          type: Directory
-      - name: dev-vboxdrv
-        hostPath:
-          path: /dev/vboxdrv
-          type: CharDevice
-      - name: dev-vboxdrvu
-        hostPath:
-          path: /dev/vboxdrvu
-          type: CharDevice
-      - name: dev-vboxnetctl
-        hostPath:
-          path: /dev/vboxnetctl
-          type: CharDevice
-    trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
-    rerun_command: "/test acceptance"
 
 postsubmits:
