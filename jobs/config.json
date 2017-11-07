@@ -9,6 +9,16 @@
       "UNKNOWN"
     ]
   },
+  "puppet-module-kubernetes-acceptance": {
+    "args": [
+      "make",
+      "acceptance"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
   "navigator-quick-verify": {
     "args": [
       "make",

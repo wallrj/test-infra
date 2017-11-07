@@ -101,24 +101,85 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.2
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/workspace"
         - "--upload=gs://jetstack-logs/pr-logs"
         - "--clean"
         env:
+        - name: BUNDLE_DIR
+          value: /cache/bundle
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/service-account/service-account.json
         volumeMounts:
         - name: service
           mountPath: /etc/service-account
           readOnly: true
+        - name: bundle-cache
+          mountPath: /cache/bundle
       volumes:
       - name: service
         secret:
           secretName: service-account
+      - name: bundle-cache
+        hostPath:
+          path: /cache/bundle
+          type: Directory
     trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
+  - name: puppet-module-kubernetes-acceptance
+    always_run: true
+    skip_report: false
+    context: puppet-module-kubernetes-acceptance
+    max_concurrency: 10
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/ruby-2.3:0.3
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/workspace"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: BUNDLE_DIR
+          value: /cache/bundle
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+        - name: bundle-cache
+          mountPath: /cache/bundle
+        - name: dev-vboxdrv
+          mountPath: /dev/vboxdrv
+        - name: dev-vboxdrvu
+          mountPath: /dev/vboxdrvu
+        - name: dev-vboxnetctl
+          mountPath: /dev/vboxnetctl
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+      - name: bundle-cache
+        hostPath:
+          path: /cache/bundle
+          type: Directory
+      - name: dev-vboxdrv
+        hostPath:
+          path: /dev/vboxdrv
+          type: CharDevice
+      - name: dev-vboxdrvu
+        hostPath:
+          path: /dev/vboxdrvu
+          type: CharDevice
+      - name: dev-vboxnetctl
+        hostPath:
+          path: /dev/vboxnetctl
+          type: CharDevice
+    trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
+    rerun_command: "/test acceptance"
 
 postsubmits:
