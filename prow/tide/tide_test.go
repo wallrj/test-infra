@@ -582,7 +582,7 @@ type fkc struct {
 	createdJobs []kube.ProwJob
 }
 
-func (c *fkc) ListProwJobs(map[string]string) ([]kube.ProwJob, error) {
+func (c *fkc) ListProwJobs(string) ([]kube.ProwJob, error) {
 	return nil, nil
 }
 
@@ -774,7 +774,7 @@ func TestTakeAction(t *testing.T) {
 		var fkc fkc
 		var fgc fgc
 		c := &Controller{
-			Logger: logrus.StandardLogger().WithField("controller", "tide"),
+			logger: logrus.WithField("controller", "tide"),
 			gc:     gc,
 			ghc:    &fgc,
 			ca:     ca,

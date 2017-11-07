@@ -36,7 +36,7 @@ import time
 ORIG_CWD = os.getcwd()  # Checkout changes cwd
 
 # Note: This variable is managed by experiment/bump_e2e_image.sh.
-DEFAULT_KUBEKINS_TAG = 'v20171018-fb8014bc-master'
+DEFAULT_KUBEKINS_TAG = 'v20171030-bcf1a6a2-master'
 
 def test_infra(*paths):
     """Return path relative to root of test-infra repo."""
@@ -406,8 +406,75 @@ def build_kops(kops, mode):
     check('make', 'gcs-publish-ci', 'VERSION=%s' % version, 'GCS_LOCATION=%s' % gcs)
 
 
+def set_up_kops_gce(workspace, args, mode, cluster, runner_args):
+    """Set up kops on GCE envs."""
+    for path in [args.gce_ssh, args.gce_pub]:
+        if not os.path.isfile(os.path.expandvars(path)):
+            raise IOError(path, os.path.expandvars(path))
+    mode.add_gce_ssh(args.gce_ssh, args.gce_pub)
+
+    gce_ssh = os.path.join(workspace, '.ssh', 'google_compute_engine')
+
+    zones = args.kops_zones or random.choice([
+        'us-central1-a',
+        'us-central1-b',
+        'us-central1-c',
+        'us-central1-f',
+    ])
+
+    runner_args.extend([
+        '--kops-cluster=%s' % cluster,
+        '--kops-zones=%s' % zones,
+        '--kops-state=%s' % args.kops_state_gce,
+        '--kops-nodes=%s' % args.kops_nodes,
+        '--kops-ssh-key=%s' % gce_ssh,
+    ])
+
+
+def set_up_kops_aws(workspace, args, mode, cluster, runner_args):
+    """Set up aws related envs for kops.  Will replace set_up_aws."""
+    for path in [args.aws_ssh, args.aws_pub, args.aws_cred]:
+        if not os.path.isfile(os.path.expandvars(path)):
+            raise IOError(path, os.path.expandvars(path))
+    mode.add_aws_cred(args.aws_ssh, args.aws_pub, args.aws_cred)
+
+    aws_ssh = os.path.join(workspace, '.ssh', 'kube_aws_rsa')
+    profile = args.aws_profile
+    if args.aws_role_arn:
+        profile = mode.add_aws_role(profile, args.aws_role_arn)
+
+    zones = args.kops_zones or random.choice([
+        'us-west-1a',
+        'us-west-1c',
+        'us-west-2a',
+        'us-west-2b',
+        'us-east-1a',
+        'us-east-1d',
+        'us-east-2a',
+        'us-east-2b',
+    ])
+    regions = ','.join([zone[:-1] for zone in zones.split(',')])
+
+    mode.add_environment(
+      'AWS_PROFILE=%s' % profile,
+      'AWS_DEFAULT_PROFILE=%s' % profile,
+      'KOPS_REGIONS=%s' % regions,
+    )
+
+    if args.aws_cluster_domain:
+        cluster = '%s.%s' % (cluster, args.aws_cluster_domain)
+
+    runner_args.extend([
+        '--kops-cluster=%s' % cluster,
+        '--kops-zones=%s' % zones,
+        '--kops-state=%s' % args.kops_state,
+        '--kops-nodes=%s' % args.kops_nodes,
+        '--kops-ssh-key=%s' % aws_ssh,
+    ])
+
+
 def set_up_aws(workspace, args, mode, cluster, runner_args):
-    """Set up aws related envs."""
+    """Set up aws related envs.  Legacy; will be replaced by set_up_kops_aws."""
     for path in [args.aws_ssh, args.aws_pub, args.aws_cred]:
         if not os.path.isfile(os.path.expandvars(path)):
             raise IOError(path, os.path.expandvars(path))
@@ -485,7 +552,7 @@ def main(args):
 
     container = '%s-%s' % (os.environ.get('JOB_NAME'), os.environ.get('BUILD_NUMBER'))
     if args.mode == 'docker':
-        sudo = args.docker_in_docker or args.build is not None
+        sudo = args.docker_in_docker or args.build is not None or args.build_federation is not None
         mode = DockerMode(container, artifacts, sudo, args.tag, args.mount_paths)
     elif args.mode == 'local':
         mode = LocalMode(workspace, artifacts)  # pylint: disable=bad-option-value
@@ -543,6 +610,16 @@ def main(args):
             raise ValueError(k8s)
         mode.add_k8s(os.path.dirname(k8s), 'kubernetes', 'release')
 
+    if args.build_federation is not None:
+        if args.build_federation == '':
+            runner_args.append('--build-federation')
+        else:
+            runner_args.append('--build-federation=%s' % args.build_federation)
+        fed = os.getcwd()
+        if not os.path.basename(fed) == 'federation':
+            raise ValueError(fed)
+        mode.add_k8s(os.path.dirname(fed), 'federation', 'release')
+
     if args.kops_build:
         build_kops(os.getcwd(), mode)
 
@@ -566,6 +643,12 @@ def main(args):
         runner_args.append('--down')
     if args.test == 'true':
         runner_args.append('--test')
+
+    # Passthrough some args to kubetest
+    if args.deployment:
+        runner_args.append('--deployment=%s' % args.deployment)
+    if args.provider:
+        runner_args.append('--provider=%s' % args.provider)
 
     cluster = cluster_name(args.cluster, os.getenv('BUILD_NUMBER', 0))
     runner_args.append('--cluster=%s' % cluster)
@@ -593,7 +676,13 @@ def main(args):
             ])
 
     if args.aws:
+        # Legacy - prefer passing --deployment=kops, --provider=aws,
+        # which does not use kops-e2e-runner.sh
         set_up_aws(mode.workspace, args, mode, cluster, runner_args)
+    elif args.deployment == 'kops' and args.provider == 'aws':
+        set_up_kops_aws(mode.workspace, args, mode, cluster, runner_args)
+    elif args.deployment == 'kops' and args.provider == 'gce':
+        set_up_kops_gce(mode.workspace, args, mode, cluster, runner_args)
     elif args.gce_ssh:
         mode.add_gce_ssh(args.gce_ssh, args.gce_pub)
 
@@ -657,6 +746,9 @@ def create_parser():
         '--build', nargs='?', default=None, const='',
         help='Build kubernetes binaries if set, optionally specifying strategy')
     parser.add_argument(
+        '--build-federation', nargs='?', default=None, const='',
+        help='Build federation binaries if set, optionally specifying strategy')
+    parser.add_argument(
         '--use-shared-build', nargs='?', default=None, const='',
         help='Use prebuilt kubernetes binaries if set, optionally specifying strategy')
     parser.add_argument(
@@ -689,7 +781,9 @@ def create_parser():
         default=[],
         help='Send unrecognized args directly to kubetest')
 
-    # aws
+
+    # kops & aws
+    # TODO(justinsb): replace with --provider=aws --deployment=kops
     parser.add_argument(
         '--aws', action='store_true', help='E2E job runs in aws')
     parser.add_argument(
@@ -724,9 +818,18 @@ def create_parser():
         '--kops-state', default='s3://k8s-kops-jenkins/',
         help='Name of the aws state storage')
     parser.add_argument(
+        '--kops-state-gce', default='gs://k8s-kops-gce/',
+        help='Name of the kops state storage for GCE')
+    parser.add_argument(
         '--kops-zones', help='Comma-separated list of zones else random choice')
     parser.add_argument(
         '--kops-build', action='store_true', help='If we need to build kops locally')
+
+    # kubetest flags that also trigger behaviour here
+    parser.add_argument(
+        '--provider', help='provider flag as used by kubetest')
+    parser.add_argument(
+        '--deployment', help='deployment flag as used by kubetest')
 
     return parser
 
@@ -744,7 +847,7 @@ def parse_args(args=None):
         raise ValueError(
             '--image-family and --image-project must be both set or unset')
 
-    if args.aws:
+    if args.aws or args.provider == 'aws':
         # If aws keys are missing, try to fetch from HOME dir
         if not args.aws_ssh or not args.aws_pub or not args.aws_cred:
             home = os.environ.get('HOME')

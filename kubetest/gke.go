@@ -22,6 +22,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -31,8 +32,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	flag "github.com/spf13/pflag"
+	"time"
 )
 
 const (
@@ -141,9 +141,9 @@ func newGKE(provider, project, zone, region, network, image, cluster string, tes
 	}
 
 	g.commandGroup = strings.Fields(*gkeCommandGroup)
-	if *gkeCommandGroup == "alpha" {
-		// By default gcloud alpha container is using v1 alpha api.
-		// If we want to use v1alpha1 we need to force it.
+	if *gkeCommandGroup == "alpha" || *gkeCommandGroup == "beta" {
+		// By default gcloud {alpha,beta} container is using v1 api.
+		// If we want to use v1alpha1/v1beta1 we need to force it.
 		if err := finishRunning(exec.Command("gcloud", "config", "set", "container/use_v1_api_client", "False")); err != nil {
 			return nil, err
 		}
@@ -511,4 +511,23 @@ func (g *gkeDeployer) Down() error {
 
 func (g *gkeDeployer) containerArgs(args ...string) []string {
 	return append(append(append([]string{}, g.commandGroup...), "container"), args...)
+}
+
+func (g *gkeDeployer) GetClusterCreated(gcpProject string) (time.Time, error) {
+	res, err := output(exec.Command(
+		"gcloud",
+		"compute",
+		"instance-groups",
+		"list",
+		"--project="+gcpProject,
+		"--format=json(name,creationTimestamp)"))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("list instance-group failed : %v", err)
+	}
+
+	created, err := getLatestClusterUpTime(string(res))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse time failed : got gcloud res %s, err %v", string(res), err)
+	}
+	return created, nil
 }

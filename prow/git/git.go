@@ -34,8 +34,8 @@ const github = "https://github.com"
 // Client can clone repos. It keeps a local cache, so successive clones of the
 // same repo should be quick. Create with NewClient. Be sure to clean it up.
 type Client struct {
-	// Logger will be used to log git operations and must be set.
-	Logger *logrus.Entry
+	// logger will be used to log git operations and must be set.
+	logger *logrus.Entry
 
 	// dir is the location of the git cache.
 	dir string
@@ -70,6 +70,7 @@ func NewClient() (*Client, error) {
 		return nil, err
 	}
 	return &Client{
+		logger:    logrus.WithField("client", "git"),
 		dir:       t,
 		git:       g,
 		base:      github,
@@ -114,19 +115,19 @@ func (c *Client) Clone(repo string) (*Repo, error) {
 	cache := filepath.Join(c.dir, repo) + ".git"
 	if _, err := os.Stat(cache); os.IsNotExist(err) {
 		// Cache miss, clone it now.
-		c.Logger.Infof("Cloning %s for the first time.", repo)
+		c.logger.Infof("Cloning %s for the first time.", repo)
 		if err := os.Mkdir(filepath.Dir(cache), os.ModePerm); err != nil && !os.IsExist(err) {
 			return nil, err
 		}
-		if b, err := retryCmd(c.Logger, "", c.git, "clone", "--mirror", remote, cache); err != nil {
+		if b, err := retryCmd(c.logger, "", c.git, "clone", "--mirror", remote, cache); err != nil {
 			return nil, fmt.Errorf("git cache clone error: %v. output: %s", err, string(b))
 		}
 	} else if err != nil {
 		return nil, err
 	} else {
 		// Cache hit. Do a git fetch to keep updated.
-		c.Logger.Infof("Fetching %s.", repo)
-		if b, err := retryCmd(c.Logger, cache, c.git, "fetch"); err != nil {
+		c.logger.Infof("Fetching %s.", repo)
+		if b, err := retryCmd(c.logger, cache, c.git, "fetch"); err != nil {
 			return nil, fmt.Errorf("git fetch error: %v. output: %s", err, string(b))
 		}
 	}
@@ -139,7 +140,7 @@ func (c *Client) Clone(repo string) (*Repo, error) {
 	}
 	return &Repo{
 		Dir:    t,
-		logger: c.Logger,
+		logger: c.logger,
 		git:    c.git,
 		base:   c.base,
 		repo:   repo,
@@ -183,6 +184,26 @@ func (r *Repo) Checkout(commitlike string) error {
 	return nil
 }
 
+// RevParse runs git rev-parse.
+func (r *Repo) RevParse(commitlike string) (string, error) {
+	r.logger.Infof("RevParse %s.", commitlike)
+	b, err := r.gitCommand("rev-parse", commitlike).CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("error rev-parsing %s: %v. output: %s", commitlike, err, string(b))
+	}
+	return string(b), nil
+}
+
+// CheckoutNewBranch creates a new branch and checks it out.
+func (r *Repo) CheckoutNewBranch(branch string) error {
+	r.logger.Infof("Create and checkout %s.", branch)
+	co := r.gitCommand("checkout", "-b", branch)
+	if b, err := co.CombinedOutput(); err != nil {
+		return fmt.Errorf("error checking out %s: %v. output: %s", branch, err, string(b))
+	}
+	return nil
+}
+
 // Merge attempts to merge commitlike into the current branch. It returns true
 // if the merge completes. It returns an error if the abort fails.
 func (r *Repo) Merge(commitlike string) (bool, error) {
@@ -197,6 +218,32 @@ func (r *Repo) Merge(commitlike string) (bool, error) {
 		return false, fmt.Errorf("error aborting merge for commitlike %s: %v. output: %s", commitlike, err, string(b))
 	}
 	return false, nil
+}
+
+// Apply tries to apply the patch in the given path into the current branch.
+// It returns an error if the patch cannot be applied.
+func (r *Repo) Apply(path string) error {
+	r.logger.Infof("Applying %s.", path)
+	co := r.gitCommand("am", path)
+	b, err := co.CombinedOutput()
+	if err == nil {
+		return nil
+	}
+	r.logger.WithError(err).Warningf("Patch apply failed with output: %s", string(b))
+	if b, abortErr := r.gitCommand("am", "--abort").CombinedOutput(); err != nil {
+		r.logger.WithError(abortErr).Warningf("Patch apply failed with output: %s", string(b))
+	}
+	return err
+}
+
+// Push pushes over https to the provided owner/repo#branch using a password
+// for basic auth.
+func (r *Repo) Push(owner, pass, repo, branch string) error {
+	r.logger.Infof("Pushing to '%s/%s %s'.", owner, repo, branch)
+	remote := fmt.Sprintf("https://%s:%s@github.com/%s/%s", owner, pass, owner, repo)
+	co := r.gitCommand("push", remote, branch)
+	_, err := co.CombinedOutput()
+	return err
 }
 
 // CheckoutPullRequest does exactly that.

@@ -26,7 +26,9 @@ filegroup(
     name = "all-srcs",
     srcs = [
         ":package-srcs",
+        "//experiment/cherrypicker:all-srcs",
         "//experiment/commenter:all-srcs",
+        "//experiment/manual-trigger:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

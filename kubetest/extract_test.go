@@ -74,7 +74,7 @@ func TestGetKube(t *testing.T) {
 		if err := ioutil.WriteFile("./get-kube.sh", bytes, 0700); err != nil {
 			t.Fatal(err)
 		}
-		err := getKube("url", "version")
+		err := getKube("url", "version", false)
 		if tc.success && err != nil {
 			t.Errorf("%s did not succeed: %s", tc.name, err)
 		}
@@ -120,6 +120,16 @@ func TestExtractStrategies(t *testing.T) {
 			"https://storage.googleapis.com/kubernetes-release-gke/release",
 			"v1.8.0-gke.0",
 		},
+		{
+			"ci/latest",
+			"https://storage.googleapis.com/kubernetes-release-dev/ci",
+			"v1.2.3+abcde",
+		},
+		{
+			"ci/gke-staging-latest",
+			"https://storage.googleapis.com/kubernetes-release-gke/release",
+			"v1.2.3+abcde",
+		},
 	}
 
 	var gotURL string
@@ -130,12 +140,18 @@ func TestExtractStrategies(t *testing.T) {
 	// arguments.
 	oldGetKube := getKube
 	defer func() { getKube = oldGetKube }()
-	getKube = func(url, version string) error {
+	getKube = func(url, version string, _ bool) error {
 		gotURL = url
 		gotVersion = version
 		// This is needed or else Extract() will think that getKube failed.
 		os.Mkdir("kubernetes", 0775)
 		return nil
+	}
+
+	oldCat := gsutilCat
+	defer func() { gsutilCat = oldCat }()
+	gsutilCat = func(url string) ([]byte, error) {
+		return []byte("v1.2.3+abcde"), nil
 	}
 
 	for _, tc := range cases {
@@ -149,7 +165,7 @@ func TestExtractStrategies(t *testing.T) {
 		if err := es.Set(tc.option); err != nil {
 			t.Errorf("extractStrategy.Set(%q) returned err: %q", tc.option, err)
 		}
-		if err := es.Extract("", ""); err != nil {
+		if err := es.Extract("", "", false); err != nil {
 			t.Errorf("extractStrategy(%q).Extract() returned err: %q", tc.option, err)
 		}
 

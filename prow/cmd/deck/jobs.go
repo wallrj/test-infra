@@ -31,6 +31,7 @@ import (
 
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/kube"
+	"k8s.io/test-infra/prow/kube/labels"
 )
 
 const (
@@ -64,7 +65,7 @@ type Job struct {
 }
 
 type listPJClient interface {
-	ListProwJobs(labels map[string]string) ([]kube.ProwJob, error)
+	ListProwJobs(selector string) ([]kube.ProwJob, error)
 }
 
 type podLogClient interface {
@@ -120,6 +121,9 @@ func (ja *JobAgent) GetJobLog(job, id string) ([]byte, error) {
 		if agentToTmpl.Agent != string(j.Spec.Agent) {
 			continue
 		}
+		if !agentToTmpl.Selector.Matches(labels.Set(j.Metadata.Labels)) {
+			continue
+		}
 		var b bytes.Buffer
 		if err := agentToTmpl.URLTemplate.Execute(&b, &j); err != nil {
 			return nil, fmt.Errorf("cannot execute URL template for prowjob %q with agent %q: %v", j.Metadata.Name, j.Spec.Agent, err)
@@ -164,7 +168,7 @@ func (a byStartTime) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byStartTime) Less(i, j int) bool { return a[i].st.After(a[j].st) }
 
 func (ja *JobAgent) update() error {
-	pjs, err := ja.kc.ListProwJobs(nil)
+	pjs, err := ja.kc.ListProwJobs(kube.EmptySelector)
 	if err != nil {
 		return err
 	}

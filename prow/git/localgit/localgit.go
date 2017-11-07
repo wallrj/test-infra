@@ -25,8 +25,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
-
 	"k8s.io/test-infra/prow/git"
 )
 
@@ -54,7 +52,6 @@ func New() (*LocalGit, *git.Client, error) {
 		os.RemoveAll(t)
 		return nil, nil, err
 	}
-	c.Logger = logrus.NewEntry(logrus.StandardLogger())
 	c.SetRemote(t)
 	return &LocalGit{
 		Dir: t,
@@ -103,7 +100,11 @@ func (lg *LocalGit) MakeFakeRepo(org, repo string) error {
 func (lg *LocalGit) AddCommit(org, repo string, files map[string][]byte) error {
 	rdir := filepath.Join(lg.Dir, org, repo)
 	for f, b := range files {
-		if err := ioutil.WriteFile(filepath.Join(rdir, f), b, os.ModePerm); err != nil {
+		path := filepath.Join(rdir, f)
+		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+			return err
+		}
+		if err := ioutil.WriteFile(path, b, os.ModePerm); err != nil {
 			return err
 		}
 		if err := runCmd(lg.Git, rdir, "add", f); err != nil {

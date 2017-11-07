@@ -19,7 +19,6 @@ package pjutil
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -29,12 +28,13 @@ import (
 )
 
 // NewProwJob initializes a ProwJob out of a ProwJobSpec.
-func NewProwJob(spec kube.ProwJobSpec) kube.ProwJob {
+func NewProwJob(spec kube.ProwJobSpec, labels map[string]string) kube.ProwJob {
 	return kube.ProwJob{
 		APIVersion: "prow.k8s.io/v1",
 		Kind:       "ProwJob",
 		Metadata: kube.ObjectMeta{
-			Name: uuid.NewV1().String(),
+			Name:   uuid.NewV1().String(),
+			Labels: labels,
 		},
 		Spec: spec,
 		Status: kube.ProwJobStatus{
@@ -119,9 +119,11 @@ func BatchSpec(p config.Presubmit, refs kube.Refs) kube.ProwJobSpec {
 }
 
 // ProwJobToPod converts a ProwJob to a Pod that will run the tests.
-func ProwJobToPod(pj kube.ProwJob, buildID string) *kube.Pod {
-	env := EnvForSpec(pj.Spec)
-	env["BUILD_NUMBER"] = buildID
+func ProwJobToPod(pj kube.ProwJob, buildID string) (*kube.Pod, error) {
+	env, err := EnvForSpec(NewJobSpec(pj.Spec, buildID))
+	if err != nil {
+		return nil, err
+	}
 
 	spec := pj.Spec.PodSpec
 	spec.RestartPolicy = "Never"
@@ -135,19 +137,22 @@ func ProwJobToPod(pj kube.ProwJob, buildID string) *kube.Pod {
 		spec.Containers[i].Name = fmt.Sprintf("%s-%d", pj.Metadata.Name, i)
 		spec.Containers[i].Env = append(spec.Containers[i].Env, kubeEnv(env)...)
 	}
+	podLabels := make(map[string]string)
+	for k, v := range pj.Metadata.Labels {
+		podLabels[k] = v
+	}
+	podLabels[kube.CreatedByProw] = "true"
+	podLabels[kube.ProwJobTypeLabel] = string(pj.Spec.Type)
 	return &kube.Pod{
 		Metadata: kube.ObjectMeta{
-			Name: pj.Metadata.Name,
-			Labels: map[string]string{
-				kube.CreatedByProw: "true",
-				"type":             string(pj.Spec.Type),
-			},
+			Name:   pj.Metadata.Name,
+			Labels: podLabels,
 			Annotations: map[string]string{
-				"job": pj.Spec.Job,
+				kube.ProwJobAnnotation: pj.Spec.Job,
 			},
 		},
 		Spec: spec,
-	}
+	}, nil
 }
 
 // kubeEnv transforms a mapping of environment variables
@@ -162,30 +167,6 @@ func kubeEnv(environment map[string]string) []kube.EnvVar {
 	}
 
 	return kubeEnvironment
-}
-
-// EnvForSpec returns a mapping of environment variables
-// to their values that should be available for a job spec
-func EnvForSpec(spec kube.ProwJobSpec) map[string]string {
-	env := map[string]string{
-		"JOB_NAME": spec.Job,
-	}
-
-	if spec.Type == kube.PeriodicJob {
-		return env
-	}
-	env["REPO_OWNER"] = spec.Refs.Org
-	env["REPO_NAME"] = spec.Refs.Repo
-	env["PULL_BASE_REF"] = spec.Refs.BaseRef
-	env["PULL_BASE_SHA"] = spec.Refs.BaseSHA
-	env["PULL_REFS"] = spec.Refs.String()
-
-	if spec.Type == kube.PostsubmitJob || spec.Type == kube.BatchJob {
-		return env
-	}
-	env["PULL_NUMBER"] = strconv.Itoa(spec.Refs.Pulls[0].Number)
-	env["PULL_PULL_SHA"] = spec.Refs.Pulls[0].SHA
-	return env
 }
 
 // PartitionPending separates the provided prowjobs into pending and non-pending
