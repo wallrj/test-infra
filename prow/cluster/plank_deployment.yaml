@@ -31,12 +31,16 @@ spec:
         args:
         - --tot-url=http://tot
         - --dry-run=false
+        - --build-cluster=/etc/cluster/cluster
         volumeMounts:
         - name: oauth
           mountPath: /etc/github
           readOnly: true
         - name: config
           mountPath: /etc/config
+          readOnly: true
+        - mountPath: /etc/cluster
+          name: cluster
           readOnly: true
       volumes:
       - name: oauth
@@ -45,3 +49,6 @@ spec:
       - name: config
         configMap:
           name: config
+      - name: cluster
+        secret:
+          secretName: build-cluster
