@@ -61,7 +61,7 @@ log_level: info
         secretName: service-account
     - name: bundle-cache
       hostPath:
-        path: /cache/bundle
+        path: /var/lib/libvirt/caches/bundle
         type: Directory
   trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
   rerun_command: "/test verify"
@@ -109,11 +109,11 @@ log_level: info
         secretName: service-account
     - name: bundle-cache
       hostPath:
-        path: /cache/bundle
+        path: /var/lib/libvirt/caches/bundle
         type: Directory
     - name: vagrant-boxes
       hostPath:
-        path: /cache/vagrant-boxes
+        path: /var/lib/libvirt/caches/vagrant-boxes
         type: Directory
     - name: var-run-libvirt-libvirt-sock
       hostPath:
