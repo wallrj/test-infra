@@ -46,7 +46,7 @@ log_level: info
       - "--clean"
       env:
       - name: BUNDLE_DIR
-        value: /cache/bundle
+        value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
       volumeMounts:
@@ -61,7 +61,7 @@ log_level: info
         secretName: service-account
     - name: bundle-cache
       hostPath:
-        path: /cache/bundle
+        path: /var/lib/libvirt/caches/bundle
         type: Directory
   trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
   rerun_command: "/test verify"
@@ -90,7 +90,7 @@ log_level: info
       - "--clean"
       env:
       - name: BUNDLE_DIR
-        value: /cache/bundle
+        value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
       volumeMounts:
@@ -109,13 +109,14 @@ log_level: info
         secretName: service-account
     - name: bundle-cache
       hostPath:
-        path: /cache/bundle
+        path: /var/lib/libvirt/caches/bundle
         type: Directory
     - name: vagrant-boxes
       hostPath:
-        path: /cache/vagrant-boxes
+        path: /var/lib/libvirt/caches/vagrant-boxes
         type: Directory
-    - hostPath:
+    - name: var-run-libvirt-libvirt-sock
+      hostPath:
         path: /var/run/libvirt/libvirt-sock
         type: Socket
   trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
@@ -193,5 +194,16 @@ presubmits:
   - <<: *puppet_module_acceptance
     name: puppet-module-kubernetes-acceptance
     context: puppet-module-kubernetes-acceptance
+
+  jetstack/puppet-module-etcd:
+  - <<: *puppet_module_verify
+    name: puppet-module-etcd-quick-verify
+    context: puppet-module-etcd-quick-verify
+  - <<: *puppet_module_acceptance
+    name: puppet-module-etcd-acceptance-single-node
+    context: puppet-module-etcd-acceptance-single-node
+  - <<: *puppet_module_acceptance
+    name: puppet-module-etcd-acceptance-three-node
+    context: puppet-module-etcd-acceptance-three-node
 
 postsubmits:
