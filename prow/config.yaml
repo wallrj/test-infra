@@ -115,7 +115,8 @@ log_level: info
       hostPath:
         path: /cache/vagrant-boxes
         type: Directory
-    - hostPath:
+    - name: var-run-libvirt-libvirt-sock
+      hostPath:
         path: /var/run/libvirt/libvirt-sock
         type: Socket
   trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
