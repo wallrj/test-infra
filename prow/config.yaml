@@ -38,7 +38,7 @@ log_level: info
   agent: kubernetes
   spec:
     containers:
-    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
+    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.5
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
       - "--root=/workspace"
@@ -74,17 +74,20 @@ log_level: info
   max_concurrency: 2
   agent: kubernetes
   spec:
-    # necessary for vagrant host to guest communication
-    hostNetwork: true
+    nodeSelector:
+      node-role.kubernetes.io/libvirt: ""
+    # Note: this is not supported yet by prow PodSpec, taint temporary removed
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
     containers:
-    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.4
+    - image: gcr.io/jetstack-build-infra/ruby-2.3:0.5
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
       - "--root=/workspace"
       - "--upload=gs://jetstack-logs/pr-logs"
       - "--clean"
-      securityContext:
-       privileged: true
       env:
       - name: BUNDLE_DIR
         value: /cache/bundle
@@ -96,14 +99,10 @@ log_level: info
         readOnly: true
       - name: bundle-cache
         mountPath: /cache/bundle
-      - name: dev-vboxdrv
-        mountPath: /dev/vboxdrv
-      - name: dev-vboxdrvu
-        mountPath: /dev/vboxdrvu
-      - name: dev-vboxnetctl
-        mountPath: /dev/vboxnetctl
       - name: vagrant-boxes
         mountPath: /root/.vagrant.d/boxes
+      - mountPath: /var/run/libvirt/libvirt-sock
+        name: var-run-libvirt-libvirt-sock
     volumes:
     - name: service
       secret:
@@ -116,18 +115,9 @@ log_level: info
       hostPath:
         path: /cache/vagrant-boxes
         type: Directory
-    - name: dev-vboxdrv
-      hostPath:
-        path: /dev/vboxdrv
-        type: CharDevice
-    - name: dev-vboxdrvu
-      hostPath:
-        path: /dev/vboxdrvu
-        type: CharDevice
-    - name: dev-vboxnetctl
-      hostPath:
-        path: /dev/vboxnetctl
-        type: CharDevice
+    - hostPath:
+        path: /var/run/libvirt/libvirt-sock
+        type: Socket
   trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
   rerun_command: "/test acceptance"
 

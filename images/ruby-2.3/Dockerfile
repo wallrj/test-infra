@@ -16,17 +16,9 @@
 FROM ruby:2.3
 LABEL maintainer="christian.simon@jetstack.io"
 
-
-# Install virtualbox package url
-ADD https://www.virtualbox.org/download/oracle_vbox_2016.asc /tmp/oracle_vbox_2016.asc
-RUN echo "deb http://download.virtualbox.org/virtualbox/debian jessie contrib" > /etc/apt/sources.list.d/virtualbox.list \
- && cat /tmp/oracle_vbox_2016.asc | apt-key add -
-
 RUN apt-get update && apt-get install -y \
     python \
     git \
-    dkms \
-    virtualbox-5.1 \
     curl \
     zlib1g-dev \
     build-essential \
@@ -39,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     libxml2-dev \
     libxslt1-dev \
+    libvirt-dev \
     libcurl4-openssl-dev \
     python-software-properties \
     libffi-dev \
@@ -49,16 +42,22 @@ RUN apt-get update && apt-get install -y \
 
 
 # Download and install vagrant
-RUN curl -sL -o /tmp/vagrant.deb https://releases.hashicorp.com/vagrant/1.9.5/vagrant_1.9.5_x86_64.deb \
- && echo "5c2d841c88589c929b6b24e8d7fc443b8b76c809c5ad600a7c192fc794fa329a  /tmp/vagrant.deb" | sha256sum -c \
+ENV VAGRANT_VERSION 2.0.1
+ENV VAGRANT_HASH 2f9498a83b3d650fcfcfe0ec7971070fcd3803fad6470cf7da871caf2564d84f
+RUN curl -sL -o /tmp/vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb \
+ && echo "${VAGRANT_HASH}  /tmp/vagrant.deb" | sha256sum -c \
  && DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/vagrant.deb \
  && rm /tmp/vagrant.deb
 
+# Download and install vagrant's libvirt plugin
+RUN vagrant plugin install vagrant-libvirt
 
-ENV GCLOUD_VERSION 163.0.0
-RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
-    tar xf google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz -C / && \
-    rm google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
+ENV GCLOUD_VERSION 178.0.0
+ENV GCLOUD_HASH 2e0bbbf81c11164bf892cf0b891751ba4e5172661eff907ad1f7fc0b6907e296
+RUN curl -sL -o /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
+    echo "$GCLOUD_HASH  /tmp/google-cloud-sdk.tar.gz" | sha256sum -c && \
+    tar xf /tmp/google-cloud-sdk.tar.gz -C / && \
+    rm /tmp/google-cloud-sdk.tar.gz && \
     /google-cloud-sdk/install.sh
 ENV PATH "/google-cloud-sdk/bin:${PATH}"
 
