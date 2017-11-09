@@ -106,3 +106,18 @@ plugins:
   - yuks
   - wip
   - shrug
+
+  jetstack/puppet-module-etcd:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug

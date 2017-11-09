@@ -19,6 +19,36 @@
       "UNKNOWN"
     ]
   },
+  "puppet-module-etcd-quick-verify": {
+    "args": [
+      "make",
+      "verify"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
+  "puppet-module-etcd-acceptance-single-node": {
+    "args": [
+      "make",
+      "acceptance"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
+  "puppet-module-etcd-acceptance-three-node": {
+    "args": [
+      "make",
+      "acceptance_three_node"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
   "navigator-quick-verify": {
     "args": [
       "make",
