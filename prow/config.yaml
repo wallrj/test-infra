@@ -46,7 +46,7 @@ log_level: info
       - "--clean"
       env:
       - name: BUNDLE_DIR
-        value: /cache/bundle
+        value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
       volumeMounts:
@@ -90,7 +90,7 @@ log_level: info
       - "--clean"
       env:
       - name: BUNDLE_DIR
-        value: /cache/bundle
+        value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
       volumeMounts:
