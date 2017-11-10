@@ -244,14 +244,14 @@ presubmits:
     trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
   - <<: *minikube_in_go_1_7
-    name: navigator-e2e-v1.7
-    context: navigator-e2e-v1.7
+    name: navigator-e2e-v1-7
+    context: navigator-e2e-v1-7
     always_run: false
     trigger: "(?m)^/(re)?test( all| e2e( v1.7)?),?(\\s+|$)"
     rerun_command: "/test e2e"
   - <<: *minikube_in_go_1_8
-    name: navigator-e2e-v1.8
-    context: navigator-e2e-v1.8
+    name: navigator-e2e-v1-8
+    context: navigator-e2e-v1-8
     always_run: false
     trigger: "(?m)^/(re)?test( all| e2e( v1.8)?),?(\\s+|$)"
     rerun_command: "/test e2e"

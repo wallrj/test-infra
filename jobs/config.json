@@ -59,7 +59,7 @@
       "UNKNOWN"
     ]
   },
-  "navigator-e2e-v1.7": {
+  "navigator-e2e-v1-7": {
     "args": [
       "make",
       "e2e-test"
@@ -69,7 +69,7 @@
       "UNKNOWN"
     ]
   },
-  "navigator-e2e-v1.8": {
+  "navigator-e2e-v1-8": {
     "args": [
       "make",
       "e2e-test"
