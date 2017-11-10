@@ -59,7 +59,17 @@
       "UNKNOWN"
     ]
   },
-  "navigator-e2e": {
+  "navigator-e2e-v1.7": {
+    "args": [
+      "make",
+      "e2e-test"
+    ],
+    "scenario": "minikube",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
+  "navigator-e2e-v1.8": {
     "args": [
       "make",
       "e2e-test"
