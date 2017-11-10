@@ -161,15 +161,12 @@ log_level: info
     - name: service
       secret:
         secretName: service-account
-    - name: bundle-cache
-      hostPath:
-        path: /cache/bundle
-        type: Directory
     - name: vagrant-boxes
       hostPath:
         path: /cache/vagrant-boxes
         type: Directory
-    - hostPath:
+    - name: var-run-libvirt-libvirt-sock
+      hostPath:
         path: /var/run/libvirt/libvirt-sock
         type: Socket
 
