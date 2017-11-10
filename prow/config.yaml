@@ -137,7 +137,7 @@ log_level: info
       key: dedicated
       operator: Equal
     containers:
-    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.7.0:0.2
+    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.7.10:0.2
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
       - "--root=/go/src"
@@ -182,7 +182,7 @@ log_level: info
       key: dedicated
       operator: Equal
     containers:
-    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.8.0:0.2
+    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.8.3:0.2
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
       - "--root=/go/src"
