@@ -122,6 +122,57 @@ log_level: info
   trigger: "(?m)^/(re)?test( all| acceptance),?(\\s+|$)"
   rerun_command: "/test acceptance"
 
+# kubernetes golang project image with minikube and go installed
+# with support for libvirt
+.minikube_in_go: &minikube_in_go
+  skip_report: false
+  max_concurrency: 2
+  agent: kubernetes
+  spec:
+    nodeSelector:
+      node-role.kubernetes.io/libvirt: ""
+    # Note: this is not supported yet by prow PodSpec, taint temporary removed
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+    containers:
+    - image: gcr.io/jetstack-build-infra/minikube-in-go:0.2
+      command:
+      - sleep
+      - "7200"
+      # args:
+      # - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      # - "--root=/workspace"
+      # - "--upload=gs://jetstack-logs/pr-logs"
+      # - "--clean"
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/service-account/service-account.json
+      volumeMounts:
+      - name: service
+        mountPath: /etc/service-account
+        readOnly: true
+      - name: vagrant-boxes
+        mountPath: /root/.vagrant.d/boxes
+      - mountPath: /var/run/libvirt/libvirt-sock
+        name: var-run-libvirt-libvirt-sock
+    volumes:
+    - name: service
+      secret:
+        secretName: service-account
+    - name: bundle-cache
+      hostPath:
+        path: /cache/bundle
+        type: Directory
+    - name: vagrant-boxes
+      hostPath:
+        path: /cache/vagrant-boxes
+        type: Directory
+    - hostPath:
+        path: /var/run/libvirt/libvirt-sock
+        type: Socket
+
 presubmits:
   jetstack/navigator:
   - name: navigator-quick-verify
@@ -151,40 +202,11 @@ presubmits:
           secretName: service-account
     trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
-  - name: navigator-e2e
-    always_run: false
-    skip_report: false
+  - <<: *minikube_in_go
+    name: navigator-e2e
     context: navigator-e2e
-    max_concurrency: 1
-    agent: kubernetes
-    spec:
-      containers:
-      - image: gcr.io/jetstack-build-infra/minikube-in-go:0.1
-        imagePullPolicy: Always
-        args:
-        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
-        - "--root=/go/src"
-        - "--upload=gs://jetstack-logs/pr-logs"
-        - "--clean"
-        env:
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /etc/service-account/service-account.json
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: service
-          mountPath: /etc/service-account
-          readOnly: true
-        - name: dockersocket
-          mountPath: /var/run
-      volumes:
-      - name: service
-        secret:
-          secretName: service-account
-      - name: dockersocket
-        hostPath:
-          path: /var/run
-    trigger: "(?m)^/test( all| e2e),?(\\s+|$)"
+    always_run: false
+    trigger: "(?m)^/(re)?test( all| e2e),?(\\s+|$)"
     rerun_command: "/test e2e"
 
   jetstack/puppet-module-kubernetes:
