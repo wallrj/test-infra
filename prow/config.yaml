@@ -155,17 +155,17 @@ log_level: info
       - name: service
         mountPath: /etc/service-account
         readOnly: true
-      - name: minikube-iso
-        mountPath: /var/lib/libvirt/caches/minikube
-      - mountPath: /var/run/libvirt/libvirt-sock
-        name: var-run-libvirt-libvirt-sock
+      - name: var-lib-libvirt
+        mountPath: /var/lib/libvirt
+      - name: var-run-libvirt-libvirt-sock
+        mountPath: /var/run/libvirt/libvirt-sock
     volumes:
     - name: service
       secret:
         secretName: service-account
-    - name: minikube-iso
+    - name: var-lib-libvirt
       hostPath:
-        path: /var/lib/libvirt/caches/minikube
+        path: /var/lib/libvirt
         type: Directory
     - name: var-run-libvirt-libvirt-sock
       hostPath:
