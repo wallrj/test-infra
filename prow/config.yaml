@@ -153,17 +153,17 @@ log_level: info
       - name: service
         mountPath: /etc/service-account
         readOnly: true
-      - name: vagrant-boxes
-        mountPath: /root/.vagrant.d/boxes
+      - name: minikube-iso
+        mountPath: /root/.minikube/machines/minikube
       - mountPath: /var/run/libvirt/libvirt-sock
         name: var-run-libvirt-libvirt-sock
     volumes:
     - name: service
       secret:
         secretName: service-account
-    - name: vagrant-boxes
+    - name: minikube-iso
       hostPath:
-        path: /cache/vagrant-boxes
+        path: /root/.minikube/machines/minikube
         type: Directory
     - name: var-run-libvirt-libvirt-sock
       hostPath:
