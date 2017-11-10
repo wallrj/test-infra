@@ -149,12 +149,14 @@ log_level: info
       env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
+      - name: MINIKUBE_HOME
+        value: /var/lib/libvirt/caches/minikube
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
         readOnly: true
       - name: minikube-iso
-        mountPath: /root/.minikube/machines/minikube
+        mountPath: /var/lib/libvirt/caches/minikube
       - mountPath: /var/run/libvirt/libvirt-sock
         name: var-run-libvirt-libvirt-sock
     volumes:
@@ -163,7 +165,7 @@ log_level: info
         secretName: service-account
     - name: minikube-iso
       hostPath:
-        path: /root/.minikube/machines/minikube
+        path: /var/lib/libvirt/caches/minikube
         type: Directory
     - name: var-run-libvirt-libvirt-sock
       hostPath:
