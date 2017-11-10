@@ -53,7 +53,7 @@ RUN wget https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz && \
 ENV PATH "/usr/local/go/bin:${PATH}"
 ENV GOPATH "/go"
 
-RUN go install -v github.com/dhiltgen/docker-machine-kvm/cmd/docker-machine-driver-kvm
+RUN go get -v github.com/dhiltgen/docker-machine-kvm/cmd/docker-machine-driver-kvm
 
 ENV GCLOUD_VERSION 163.0.0
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
