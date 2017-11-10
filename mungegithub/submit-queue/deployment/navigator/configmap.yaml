@@ -12,8 +12,8 @@ repo-dir: /gitrepos
 github-key-file: /etc/hook-secret-volume/secret
 
 # status contexts options.
-required-contexts: "continuous-integration/travis-ci/pr"
-required-retest-contexts: ""
+required-contexts: "navigator-quick-verify,navigator-e2e"
+required-retest-contexts: "navigator-e2e"
 # protected-branches-extra-contexts: "cla/linuxfoundation"
 
 # submit-queue options.
