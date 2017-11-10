@@ -124,7 +124,7 @@ log_level: info
 
 # kubernetes golang project image with minikube and go installed
 # with support for libvirt
-.minikube_in_go: &minikube_in_go
+.minikube_in_go_1_7: &minikube_in_go_1_7
   skip_report: false
   max_concurrency: 2
   agent: kubernetes
@@ -137,7 +137,52 @@ log_level: info
       key: dedicated
       operator: Equal
     containers:
-    - image: gcr.io/jetstack-build-infra/minikube-in-go:0.2
+    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.7.0:0.2
+      args:
+      - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      - "--root=/go/src"
+      - "--upload=gs://jetstack-logs/pr-logs"
+      - "--clean"
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/service-account/service-account.json
+      - name: MINIKUBE_HOME
+        value: /var/lib/libvirt/caches/minikube
+      volumeMounts:
+      - name: service
+        mountPath: /etc/service-account
+        readOnly: true
+      - name: var-lib-libvirt
+        mountPath: /var/lib/libvirt
+      - name: var-run-libvirt-libvirt-sock
+        mountPath: /var/run/libvirt/libvirt-sock
+    volumes:
+    - name: service
+      secret:
+        secretName: service-account
+    - name: var-lib-libvirt
+      hostPath:
+        path: /var/lib/libvirt
+        type: Directory
+    - name: var-run-libvirt-libvirt-sock
+      hostPath:
+        path: /var/run/libvirt/libvirt-sock
+        type: Socket
+
+.minikube_in_go_1_8: &minikube_in_go_1_8
+  skip_report: false
+  max_concurrency: 2
+  agent: kubernetes
+  spec:
+    nodeSelector:
+      node-role.kubernetes.io/libvirt: ""
+    # Note: this is not supported yet by prow PodSpec, taint temporary removed
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+    containers:
+    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.8.0:0.2
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
       - "--root=/go/src"
@@ -198,11 +243,17 @@ presubmits:
           secretName: service-account
     trigger: "(?m)^/(re)?test( all| verify| quick verify),?(\\s+|$)"
     rerun_command: "/test verify"
-  - <<: *minikube_in_go
+  - <<: *minikube_in_go_1_7
     name: navigator-e2e
-    context: navigator-e2e
+    context: navigator-e2e-v1.7
     always_run: false
-    trigger: "(?m)^/(re)?test( all| e2e),?(\\s+|$)"
+    trigger: "(?m)^/(re)?test( all| e2e( v1.7)?),?(\\s+|$)"
+    rerun_command: "/test e2e"
+  - <<: *minikube_in_go_1_8
+    name: navigator-e2e
+    context: navigator-e2e-v1.8
+    always_run: false
+    trigger: "(?m)^/(re)?test( all| e2e( v1.8)?),?(\\s+|$)"
     rerun_command: "/test e2e"
 
   jetstack/puppet-module-kubernetes:

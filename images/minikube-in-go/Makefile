@@ -15,9 +15,11 @@
 VERSION = 0.2
 
 image:
-	docker build -t "gcr.io/jetstack-build-infra/minikube-in-go:$(VERSION)" .
+	docker build --build-arg KUBERNETES_VERSION=v1.8.0 -t "gcr.io/jetstack-build-infra/minikube-in-go-v1.8.0:$(VERSION)" .
+	docker build --build-arg KUBERNETES_VERSION=v1.7.0 -t "gcr.io/jetstack-build-infra/minikube-in-go-v1.7.0:$(VERSION)" .
 
 push: image
-	gcloud docker -- push "gcr.io/jetstack-build-infra/minikube-in-go:$(VERSION)"
+	gcloud docker -- push "gcr.io/jetstack-build-infra/minikube-in-go-v1.8.0:$(VERSION)"
+	gcloud docker -- push "gcr.io/jetstack-build-infra/minikube-in-go-v1.7.0:$(VERSION)"
 
 .PHONY: image push

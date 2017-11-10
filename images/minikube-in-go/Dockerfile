@@ -62,7 +62,7 @@ RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud
     /google-cloud-sdk/install.sh
 ENV PATH "/google-cloud-sdk/bin:${PATH}"
 
-ENV KUBERNETES_VERSION v1.8.0
+ARG KUBERNETES_VERSION
 RUN curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.6.1-linux-amd64.tar.gz && tar xvf helm.tar.gz && mv linux-amd64/helm /usr/local/bin \
     && curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /usr/local/bin/ \
     && curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.23.0/minikube-linux-amd64 && chmod +x minikube && mv minikube /usr/local/bin/
