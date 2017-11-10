@@ -13,7 +13,7 @@ github-key-file: /etc/hook-secret-volume/secret
 
 # status contexts options.
 required-contexts: "navigator-quick-verify,navigator-e2e-v1-7,navigator-e2e-v1-8"
-required-retest-contexts: "navigator-e2e"
+required-retest-contexts: "navigator-e2e-v1-7,navigator-e2e-v1-8"
 # protected-branches-extra-contexts: "cla/linuxfoundation"
 
 # submit-queue options.
