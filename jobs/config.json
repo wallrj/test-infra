@@ -64,7 +64,7 @@
       "make",
       "e2e-test"
     ],
-    "scenario": "execute",
+    "scenario": "minikube",
     "sigOwners": [
       "UNKNOWN"
     ]
