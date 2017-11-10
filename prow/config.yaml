@@ -140,7 +140,7 @@ log_level: info
     - image: gcr.io/jetstack-build-infra/minikube-in-go:0.2
       args:
       - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
-      - "--root=/workspace"
+      - "--root=/go/src"
       - "--upload=gs://jetstack-logs/pr-logs"
       - "--clean"
       env:
