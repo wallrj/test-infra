@@ -32,8 +32,8 @@ def check(*cmd):
     """Log and run the command, raising on errors."""
     print >>sys.stderr, 'Run:', cmd
     subprocess.check_call(cmd)
-    subprocess.call("minikube destroy --profile=%s", socket.gethostname())
-    subprocess.call("rm -Rf /var/lib/libvirt/caches/minikube/.minikube/machines/%s", socket.gethostname())
+    subprocess.call("minikube destroy --profile=%s" % socket.gethostname())
+    subprocess.call("rm -Rf /var/lib/libvirt/caches/minikube/.minikube/machines/%s" % socket.gethostname())
 
 def main(envs, cmd):
     """Run script and verify it exits 0."""
