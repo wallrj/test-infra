@@ -16,8 +16,8 @@
 FROM debian:jessie
 LABEL maintainer="james@jetstack.io"
 
-RUN apt update \
-    && apt install -y \
+RUN apt-get update \
+    && apt-get install -y \
         libvirt-bin \
         qemu-kvm \
         libvirt-dev \
