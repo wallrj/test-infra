@@ -50,7 +50,7 @@ RUN curl -L https://github.com/docker/machine/releases/download/v0.13.0/docker-m
 
 RUN wget https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz && \
 	tar -C /usr/local -xzf go1.9.1.linux-amd64.tar.gz
-ENV PATH "/usr/local/go/bin:${PATH}"
+ENV PATH "/usr/local/go/bin:/go/bin:${PATH}"
 ENV GOPATH "/go"
 
 RUN go get -v github.com/dhiltgen/docker-machine-kvm/cmd/docker-machine-driver-kvm
