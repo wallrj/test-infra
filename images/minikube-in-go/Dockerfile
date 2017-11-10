@@ -70,6 +70,11 @@ RUN curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.
 
 ENV PATH "/usr/local/bin:${PATH}"
 
+# Install docker
+# Note: 1.11+ changes the tarball format
+RUN curl -L "https://get.docker.com/builds/Linux/x86_64/docker-1.9.1.tgz" \
+    | tar -C /usr/bin -xvzf- --strip-components=3 usr/local/bin/docker
+
 WORKDIR /workspace
 ADD runner /
 ENTRYPOINT ["/bin/bash", "/runner"]
