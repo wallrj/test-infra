@@ -62,7 +62,7 @@
   "navigator-e2e": {
     "args": [
       "make",
-      "e2e-test"
+      "e2e"
     ],
     "scenario": "execute",
     "sigOwners": [

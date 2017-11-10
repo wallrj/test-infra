@@ -138,14 +138,11 @@ log_level: info
       operator: Equal
     containers:
     - image: gcr.io/jetstack-build-infra/minikube-in-go:0.2
-      command:
-      - sleep
-      - "7200"
-      # args:
-      # - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
-      # - "--root=/workspace"
-      # - "--upload=gs://jetstack-logs/pr-logs"
-      # - "--clean"
+      args:
+      - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      - "--root=/workspace"
+      - "--upload=gs://jetstack-logs/pr-logs"
+      - "--clean"
       env:
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
