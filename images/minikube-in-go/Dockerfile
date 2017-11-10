@@ -44,7 +44,7 @@ RUN apt-get update \
         zlib1g-dev \
     && apt-get clean
 
-RUN curl -L https://github.com/docker/machine/releases/download/v0.13.0/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine \
+RUN curl -L https://github.com/docker/machine/releases/download/v0.13.0/docker-machine-Linux-x86_64 >/tmp/docker-machine \
     && chmod +x /tmp/docker-machine \
     && sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
 
