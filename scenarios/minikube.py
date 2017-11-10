@@ -31,9 +31,16 @@ import socket
 def check(*cmd):
     """Log and run the command, raising on errors."""
     print >>sys.stderr, 'Run:', cmd
-    subprocess.check_call(cmd)
+    exception = None
+    try:
+        subprocess.check_call(cmd)
+    except:
+        exception = sys.exc_info()[0]
+        pass # handle errors in the called executable
     subprocess.call(["minikube", "delete", "--profile=%s" % socket.gethostname()])
     subprocess.call(["rm", "-Rf", "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" % socket.gethostname()])
+    if exception:
+        raise exception
 
 def main(envs, cmd):
     """Run script and verify it exits 0."""
