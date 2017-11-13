@@ -40,6 +40,7 @@ var (
 	kopsPath         = flag.String("kops", "", "(kops only) Path to the kops binary. kops will be downloaded from kops-base-url if not set.")
 	kopsCluster      = flag.String("kops-cluster", "", "(kops only) Deprecated. Cluster name for kops; if not set defaults to --cluster.")
 	kopsState        = flag.String("kops-state", "", "(kops only) s3:// path to kops state store. Must be set.")
+	kopsSSHUser      = flag.String("kops-ssh-user", os.Getenv("USER"), "(kops only) Username for SSH connections to nodes.)")
 	kopsSSHKey       = flag.String("kops-ssh-key", "", "(kops only) Path to ssh key-pair for each node (defaults '~/.ssh/kube_aws_rsa' if unset.)")
 	kopsKubeVersion  = flag.String("kops-kubernetes-version", "", "(kops only) If set, the version of Kubernetes to deploy (can be a URL to a GCS path where the release is stored) (Defaults to kops default, latest stable release.).")
 	kopsZones        = flag.String("kops-zones", "us-west-2a", "(kops only) zones for kops deployment, comma delimited.")
@@ -64,9 +65,11 @@ type kops struct {
 	args        string
 	kubecfg     string
 
+	// sshUser is the username to use when SSHing to nodes (for example for log capture)
+	sshUser string
 	// sshPublicKey is the path to the SSH public key matching sshPrivateKey
 	sshPublicKey string
-	// sshPublicKey is the path to the SSH private key matching sshPublicKey
+	// sshPrivateKey is the path to the SSH private key matching sshPublicKey
 	sshPrivateKey string
 
 	// GCP project we should use
@@ -227,6 +230,7 @@ func newKops(provider, gcpProject, cluster string) (*kops, error) {
 		kubeVersion:   *kopsKubeVersion,
 		sshPrivateKey: sshKey,
 		sshPublicKey:  sshKey + ".pub",
+		sshUser:       *kopsSSHUser,
 		zones:         zones,
 		nodes:         *kopsNodes,
 		adminAccess:   *kopsAdminAccess,
@@ -325,7 +329,7 @@ func (k kops) DumpClusterLogs(localPath, gcsPath string) error {
 	}
 
 	sshConfig := &ssh.ClientConfig{
-		User: "admin",
+		User: k.sshUser,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
@@ -366,7 +370,7 @@ func (k *kops) dumpAllNodes(ctx context.Context, d *logDumper) error {
 	}
 
 	var additionalIPs []string
-	dump, err := runKopsDump(k.cluster)
+	dump, err := k.runKopsDump()
 	if err != nil {
 		log.Printf("unable to get cluster status from kops: %v", err)
 	} else {
@@ -456,8 +460,8 @@ func (o *kopsDumpInstance) String() string {
 }
 
 // runKopsDump runs a kops toolbox dump to dump the status of the cluster
-func runKopsDump(clusterName string) (*kopsDump, error) {
-	o, err := output(exec.Command("kops", "toolbox", "dump", "--name", clusterName, "-ojson"))
+func (k *kops) runKopsDump() (*kopsDump, error) {
+	o, err := output(exec.Command(k.path, "toolbox", "dump", "--name", k.cluster, "-ojson"))
 	if err != nil {
 		log.Printf("error running kops toolbox dump: %s\n%s", wrapError(err).Error(), string(o))
 		return nil, err

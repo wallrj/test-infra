@@ -94,6 +94,7 @@ type options struct {
 	skew                bool
 	soak                bool
 	soakDuration        time.Duration
+	sshUser             string
 	stage               stageStrategy
 	stageFederation     stageFederationStrategy
 	test                bool
@@ -162,7 +163,7 @@ func defineFlags() *options {
 	flag.BoolVar(&o.up, "up", false, "If true, start the the e2e cluster. If cluster is already up, recreate it.")
 	flag.StringVar(&o.upgradeArgs, "upgrade_args", "", "If set, run upgrade tests before other tests")
 
-	flag.BoolVar(&verbose, "v", false, "If true, print all command output.")
+	flag.BoolVar(&verbose, "v", true, "If true, print all command output.")
 
 	// go flag does not support StringArrayVar
 	pflag.StringArrayVar(&o.testCmdArgs, "test-cmd-args", []string{}, "args for test-cmd")
@@ -769,7 +770,7 @@ func prepareGcp(o *options) error {
 		}
 	}
 
-	// Install custom gcloud verion if necessary
+	// Install custom gcloud version if necessary
 	if o.gcpCloudSdk != "" {
 		for i := 0; i < 3; i++ {
 			if err := finishRunning(exec.Command("gsutil", "-mq", "cp", "-r", o.gcpCloudSdk, home())); err == nil {

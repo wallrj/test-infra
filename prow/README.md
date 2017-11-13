@@ -18,9 +18,14 @@ not make any attempt to preserve backwards compatibility.
 * `cmd/horologium` starts periodic jobs when necessary.
 * `cmd/mkpj` creates `ProwJobs`.
 
-See also: [Life of a Prow Job](./architecture.md) 
+See also: [Life of a Prow Job](./architecture.md)
 
 ## Announcements
+
+New features added to each components:
+
+ - *November 8, 2017* `horologium:0.14` prow periodic job now support cron
+   triggers.
 
 Breaking changes to external APIs (labels, GitHub interactions, configuration
 or deployment) will be documented in this section. Prow is in a pre-release
@@ -29,6 +34,15 @@ Note: versions specified in these announcements may not include bug fixes made
 in more recent versions so it is recommended that the most recent versions are
 used when updating deployments.
 
+ - *November 10, 2017* If you want to use cron feature in prow, you need to bump to:
+ `hook:0.181`, `sinker:0.23`, `deck:0.62`, `splice:0.32`, `horologium:0.15`
+ `plank:0.60`, `jenkins-operator:0.57` and `tide:0.12` to avoid error spamming from
+ the config parser.
+ - *November 7, 2017* `plank:0.56` fixes bug introduced in `plank:0.53` that
+   affects controllers using an empty kubernetes selector.
+ - *November 7, 2017* `jenkins-operator:0.51` provides jobs with the `$BUILD_ID`
+   variable as well as the `$buildId` variable. The latter is deprecated and will
+   be removed in a future version.
  - *November 6, 2017* `plank:0.55` provides `Pods` with the `$BUILD_ID` variable
    as well as the `$BUILD_NUMBER` variable. The latter is deprecated and will be
    removed in a future version.
@@ -51,7 +65,7 @@ used when updating deployments.
    handled in the `milestonestatus` plugin instead of the `label` plugin, the
    team ID is stored at key `milestonestatus`>>`maintainers_id`.
    - The sigmention and milestonestatus plugins must be enabled on any repos
-   that require them since their functionality is no longer included in the 
+   that require them since their functionality is no longer included in the
    label plugin.
  - *September 3, 2017* `sinker:0.17` now deletes pods labeled by `plank:0.42` in
    order to avoid cleaning up unrelated pods that happen to be found in the
@@ -114,10 +128,10 @@ number.
 ## How to update the cluster
 
 Any modifications to Go code will require redeploying the affected binaries.
-Fortunately, this should result in no downtime for the system. Run `./bump.sh <program-name>` 
+Fortunately, this should result in no downtime for the system. Run `./bump.sh <program-name>`
 to bump the relevant version number in the makefile as well as in the `cluster` manifest,
-then run the image and deployment make targets on a branch which has the 
-changes. For instance, if you bumped the hook version, run 
+then run the image and deployment make targets on a branch which has the
+changes. For instance, if you bumped the hook version, run
 `make hook-image && make hook-deployment`.
 
 **Please ensure that your git tree is up to date before updating anything.**
@@ -138,10 +152,10 @@ plugin to mimic.
 
 ## How to enable a plugin on a repo
 
-Add an entry to [plugins.yaml](plugins.yaml). If you misspell the name then a 
-unit test will fail. If you have [update-config](plugins/updateconfig) plugin 
-deployed then the config will be automatically updated once the PR is merged, 
-else you will need to run `make update-plugins`. This does not require 
+Add an entry to [plugins.yaml](plugins.yaml). If you misspell the name then a
+unit test will fail. If you have [update-config](plugins/updateconfig) plugin
+deployed then the config will be automatically updated once the PR is merged,
+else you will need to run `make update-plugins`. This does not require
 redeploying the binaries, and will take effect within a minute.
 
 Note that Github events triggered by the account that is managing the plugins
@@ -151,10 +165,10 @@ second account is `tide` or the `submit-queue` munger.
 
 ## How to add new jobs
 
-To add a new job you'll need to add an entry into [config.yaml](config.yaml). 
-If you have [update-config](plugins/updateconfig) plugin deployed then the 
-config will be automatically updated once the PR is merged, else you will need 
-to run `make update-config`. This does not require redeploying any binaries, 
+To add a new job you'll need to add an entry into [config.yaml](config.yaml).
+If you have [update-config](plugins/updateconfig) plugin deployed then the
+config will be automatically updated once the PR is merged, else you will need
+to run `make update-config`. This does not require redeploying any binaries,
 and will take effect within a minute.
 
 Periodic config looks like so:
@@ -279,4 +293,4 @@ Batch Job:
 [@k8s-bot](https://github.com/k8s-bot) both live here as triggers to GitHub
 messages defined in [config.yaml](config.yaml). Here is a
 [command list](https://github.com/kubernetes/test-infra/blob/master/commands.md)
-for them. 
+for them.
