@@ -49,6 +49,10 @@ log_level: info
         value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
@@ -93,6 +97,10 @@ log_level: info
         value: /cache/bundle/$(JOB_NAME)
       - name: GOOGLE_APPLICATION_CREDENTIALS
         value: /etc/service-account/service-account.json
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
@@ -148,6 +156,10 @@ log_level: info
         value: /etc/service-account/service-account.json
       - name: MINIKUBE_HOME
         value: /var/lib/libvirt/caches/minikube
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
@@ -193,6 +205,10 @@ log_level: info
         value: /etc/service-account/service-account.json
       - name: MINIKUBE_HOME
         value: /var/lib/libvirt/caches/minikube
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
@@ -233,6 +249,10 @@ presubmits:
         env:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/service-account/service-account.json
+        resources:
+          requests:
+            cpu: "1"
+            memory: 1Gi
         volumeMounts:
         - name: service
           mountPath: /etc/service-account
