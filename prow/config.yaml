@@ -256,13 +256,18 @@ presubmits:
     trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?),?(\\s+|$)"
     rerun_command: "/test e2e v1.8"
 
-  jetstack/puppet-module-kubernetes:
+  jetstack/puppet-module-aws_ebs:
   - <<: *puppet_module_verify
-    name: puppet-module-kubernetes-quick-verify
-    context: puppet-module-kubernetes-quick-verify
+    name: puppet-module-aws_ebs-quick-verify
+    context: puppet-module-aws_ebs-quick-verify
+
+  jetstack/puppet-module-calico:
+  - <<: *puppet_module_verify
+    name: puppet-module-calico-quick-verify
+    context: puppet-module-calico-quick-verify
   - <<: *puppet_module_acceptance
-    name: puppet-module-kubernetes-acceptance
-    context: puppet-module-kubernetes-acceptance
+    name: puppet-module-calico-acceptance
+    context: puppet-module-calico-acceptance
 
   jetstack/puppet-module-etcd:
   - <<: *puppet_module_verify
@@ -274,5 +279,51 @@ presubmits:
   - <<: *puppet_module_acceptance
     name: puppet-module-etcd-acceptance-three-node
     context: puppet-module-etcd-acceptance-three-node
+
+  jetstack/puppet-module-kubernetes:
+  - <<: *puppet_module_verify
+    name: puppet-module-kubernetes-quick-verify
+    context: puppet-module-kubernetes-quick-verify
+  - <<: *puppet_module_acceptance
+    name: puppet-module-kubernetes-acceptance
+    context: puppet-module-kubernetes-acceptance
+
+  jetstack/puppet-module-kubernetes_addons:
+  - <<: *puppet_module_verify
+    name: puppet-module-kubernetes_addons-quick-verify
+    context: puppet-module-kubernetes_addons-quick-verify
+
+  jetstack/puppet-module-prometheus:
+  - <<: *puppet_module_verify
+    name: puppet-module-prometheus-quick-verify
+    context: puppet-module-prometheus-quick-verify
+
+  jetstack/puppet-module-tarmak:
+  - <<: *puppet_module_verify
+    name: puppet-module-tarmak-quick-verify
+    context: puppet-module-tarmak-quick-verify
+  - <<: *puppet_module_acceptance
+    name: puppet-module-tarmak-acceptance-1.8-centos
+    context: puppet-module-tarmak-acceptance-1-8-centos
+  - <<: *puppet_module_acceptance
+    name: puppet-module-tarmak-acceptance-1-7-centos
+    context: puppet-module-tarmak-acceptance-1-7-centos
+  - <<: *puppet_module_acceptance
+    name: puppet-module-tarmak-acceptance-1-6-centos
+    context: puppet-module-tarmak-acceptance-1-6-centos
+  - <<: *puppet_module_acceptance
+    name: puppet-module-tarmak-acceptance-1-5-centos
+    context: puppet-module-tarmak-acceptance-1-5-centos
+  - <<: *puppet_module_acceptance
+    name: puppet-module-tarmak-acceptance-1-7-ubuntu
+    context: puppet-module-tarmak-acceptance-1-7-ubuntu
+
+  jetstack/puppet-module-vault_client:
+  - <<: *puppet_module_verify
+    name: puppet-module-vault_client-quick-verify
+    context: puppet-module-vault_client-quick-verify
+  - <<: *puppet_module_acceptance
+    name: puppet-module-vault_client-acceptance
+    context: puppet-module-vault_client-acceptance
 
 postsubmits:
