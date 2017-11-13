@@ -92,7 +92,22 @@ plugins:
   - wip
   - shrug
 
-  jetstack/puppet-module-kubernetes:
+  jetstack/puppet-module-aws_ebs:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-calico:
   - docs-no-retest
   - trigger
   - assign
@@ -108,6 +123,81 @@ plugins:
   - shrug
 
   jetstack/puppet-module-etcd:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-kubernetes:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-kubernetes_addons:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-prometheus:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-tarmak:
+  - docs-no-retest
+  - trigger
+  - assign
+  - close
+  - reopen
+  - heart
+  - hold
+  - label
+  - lgtm
+  - size
+  - yuks
+  - wip
+  - shrug
+
+  jetstack/puppet-module-vault_client:
   - docs-no-retest
   - trigger
   - assign
