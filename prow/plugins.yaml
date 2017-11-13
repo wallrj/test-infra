@@ -7,6 +7,15 @@ triggers:
   - jetstack/cert-manager
   - jetstack/test-infra
   - jetstack/navigator
+  - jetstack/tarmak
+  - jetstack/puppet-module-aws_ebs
+  - jetstack/puppet-module-calico
+  - jetstack/puppet-module-etcd
+  - jetstack/puppet-module-kubernetes
+  - jetstack/puppet-module-kubernetes_addons
+  - jetstack/puppet-module-prometheus
+  - jetstack/puppet-module-vault_client
+  - jetstack/puppet-module-tarmak
   trusted_org: jetstack
 
 # heart:
