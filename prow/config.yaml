@@ -327,7 +327,7 @@ presubmits:
     name: puppet-module-tarmak-quick-verify
     context: puppet-module-tarmak-quick-verify
   - <<: *puppet_module_acceptance
-    name: puppet-module-tarmak-acceptance-1.8-centos
+    name: puppet-module-tarmak-acceptance-1-8-centos
     context: puppet-module-tarmak-acceptance-1-8-centos
   - <<: *puppet_module_acceptance
     name: puppet-module-tarmak-acceptance-1-7-centos
