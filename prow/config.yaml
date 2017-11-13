@@ -34,7 +34,7 @@ log_level: info
 .puppet_module_verify: &puppet_module_verify
   always_run: true
   skip_report: false
-  max_concurrency: 10
+  max_concurrency: 4
   agent: kubernetes
   spec:
     containers:
@@ -220,7 +220,7 @@ presubmits:
     always_run: true
     skip_report: false
     context: navigator-quick-verify
-    max_concurrency: 10
+    max_concurrency: 2
     agent: kubernetes
     spec:
       containers:
