@@ -45,7 +45,13 @@ spec:
         - name: config
           mountPath: /etc/config
           readOnly: true
+        - name: cluster
+          mountPath: /etc/cluster
       volumes:
       - name: config
         configMap:
           name: config
+      - name: cluster
+        secret:
+          defaultMode: 420
+          secretName: build-cluster
