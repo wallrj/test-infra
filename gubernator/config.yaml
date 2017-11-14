@@ -14,3 +14,21 @@ jobs:
   - navigator-quick-verify
   - navigator-e2e-v1-7
   - navigator-e2e-v1-8
+  - puppet-module-aws_ebs-quick-verify
+  - puppet-module-calico-acceptance
+  - puppet-module-calico-quick-verify
+  - puppet-module-etcd-acceptance-single-node
+  - puppet-module-etcd-acceptance-three-node
+  - puppet-module-etcd-quick-verify
+  - puppet-module-kubernetes-acceptance
+  - puppet-module-kubernetes-quick-verify
+  - puppet-module-kubernetes_addons-quick-verify
+  - puppet-module-prometheus-quick-verify
+  - puppet-module-tarmak-acceptance-1-5-centos
+  - puppet-module-tarmak-acceptance-1-6-centos
+  - puppet-module-tarmak-acceptance-1-7-centos
+  - puppet-module-tarmak-acceptance-1-7-ubuntu
+  - puppet-module-tarmak-acceptance-1-8-centos
+  - puppet-module-tarmak-quick-verify
+  - puppet-module-vault_client-acceptance
+  - puppet-module-vault_client-quick-verify
