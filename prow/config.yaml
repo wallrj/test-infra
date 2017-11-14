@@ -51,7 +51,7 @@ log_level: info
         value: /etc/service-account/service-account.json
       resources:
         requests:
-          cpu: "1"
+          cpu: 500m
           memory: 1Gi
       volumeMounts:
       - name: service
@@ -99,7 +99,7 @@ log_level: info
         value: /etc/service-account/service-account.json
       resources:
         requests:
-          cpu: "1"
+          cpu: 500m
           memory: 1Gi
       volumeMounts:
       - name: service
@@ -158,7 +158,7 @@ log_level: info
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: "1"
+          cpu: 500m
           memory: 1Gi
       securityContext:
         privileged: true
@@ -209,7 +209,7 @@ log_level: info
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: "1"
+          cpu: 500m
           memory: 1Gi
       securityContext:
         privileged: true
@@ -255,7 +255,7 @@ presubmits:
           value: /etc/service-account/service-account.json
         resources:
           requests:
-            cpu: "1"
+            cpu: 500m
             memory: 1Gi
         volumeMounts:
         - name: service
