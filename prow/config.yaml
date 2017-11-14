@@ -133,8 +133,6 @@ log_level: info
 # kubernetes golang project image with minikube and go installed
 # with support for libvirt
 .minikube_in_go_1_7: &minikube_in_go_1_7
-  skip_report: false
-  max_concurrency: 2
   agent: kubernetes
   spec:
     nodeSelector:
@@ -184,8 +182,6 @@ log_level: info
         type: Socket
 
 .minikube_in_go_1_8: &minikube_in_go_1_8
-  skip_report: false
-  max_concurrency: 2
   agent: kubernetes
   spec:
     nodeSelector:
@@ -273,12 +269,16 @@ presubmits:
     always_run: false
     trigger: "(?m)^/(re)?test( all| e2e( v?1.7)?),?(\\s+|$)"
     rerun_command: "/test e2e v1.7"
+    skip_report: false
+    max_concurrency: 2
   - <<: *minikube_in_go_1_8
     name: navigator-e2e-v1-8
     context: navigator-e2e-v1-8
     always_run: false
     trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?),?(\\s+|$)"
     rerun_command: "/test e2e v1.8"
+    skip_report: false
+    max_concurrency: 2
 
   jetstack/puppet-module-aws_ebs:
   - <<: *puppet_module_verify
@@ -364,4 +364,10 @@ presubmits:
     name: puppet-module-vault_client-acceptance
     context: puppet-module-vault_client-acceptance
 
-postsubmits:
+periodics:
+- <<: *minikube_in_go_1_7
+  name: navigator-e2e-v1-7
+  interval: 6h
+- <<: *minikube_in_go_1_8
+  name: navigator-e2e-v1-8
+  interval: 6h
