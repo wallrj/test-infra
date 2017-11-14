@@ -416,6 +416,7 @@ periodics:
         type: Socket
 - name: navigator-e2e-v1-8
   interval: 6h
+  agent: kubernetes
   spec:
     nodeSelector:
       node-role.kubernetes.io/libvirt: ""
