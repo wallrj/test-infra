@@ -160,6 +160,8 @@ log_level: info
         requests:
           cpu: "1"
           memory: 1Gi
+      securityContext:
+        privileged: true
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
@@ -209,6 +211,8 @@ log_level: info
         requests:
           cpu: "1"
           memory: 1Gi
+      securityContext:
+        privileged: true
       volumeMounts:
       - name: service
         mountPath: /etc/service-account
