@@ -1,5 +1,5 @@
 VERSION = $(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)
-PROJECT ?= k8s-gubernator
+PROJECT ?= jetstack-build-infra
 
 # TODO(fejta): convert these to bazel rules
 
