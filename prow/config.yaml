@@ -157,7 +157,7 @@ log_level: info
       resources:
         requests:
           cpu: 500m
-          memory: 1Gi
+          memory: 4Gi
       securityContext:
         privileged: true
       volumeMounts:
@@ -206,7 +206,7 @@ log_level: info
       resources:
         requests:
           cpu: 500m
-          memory: 1Gi
+          memory: 4Gi
       securityContext:
         privileged: true
       volumeMounts:
@@ -391,7 +391,7 @@ periodics:
       resources:
         requests:
           cpu: 500m
-          memory: 1Gi
+          memory: 4Gi
       securityContext:
         privileged: true
       volumeMounts:
@@ -440,7 +440,7 @@ periodics:
       resources:
         requests:
           cpu: 500m
-          memory: 1Gi
+          memory: 4Gi
       securityContext:
         privileged: true
       volumeMounts:
