@@ -112,7 +112,7 @@
   "puppet-module-tarmak-acceptance-1-8-centos": {
     "args": [
       "make",
-      "acceptance-1-7-centos"
+      "acceptance-1-8-centos"
     ],
     "scenario": "execute",
     "sigOwners": [
