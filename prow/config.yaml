@@ -267,7 +267,7 @@ presubmits:
     name: navigator-e2e-v1-7
     context: navigator-e2e-v1-7
     always_run: false
-    trigger: "(?m)^/(re)?test( all| e2e( v?1.7)?),?(\\s+|$)"
+    trigger: "(?m)^/(re)?test( all| e2e( v?1.7)?|)$"
     rerun_command: "/test e2e v1.7"
     skip_report: false
     max_concurrency: 2
@@ -275,7 +275,7 @@ presubmits:
     name: navigator-e2e-v1-8
     context: navigator-e2e-v1-8
     always_run: false
-    trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?),?(\\s+|$)"
+    trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?|)$"
     rerun_command: "/test e2e v1.8"
     skip_report: false
     max_concurrency: 2
