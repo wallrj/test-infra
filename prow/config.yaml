@@ -24,6 +24,11 @@ log_level: info
 #   queries:
 #   - "type:pr state:open repo:kubernetes/test-infra label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/hold label:\"cncf-cla: yes\""
 
+tide:
+  queries:
+    - "type:pr state:open repo:jetstack/puppet-module-kubernetes label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-tarmak label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+
 # push_gateway:
 #   endpoint: pushgateway
 
