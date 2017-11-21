@@ -364,6 +364,39 @@ presubmits:
     name: puppet-module-vault_client-acceptance
     context: puppet-module-vault_client-acceptance
 
+  jetstack/tarmak:
+  - name: tarmak-quick-verify
+    always_run: true
+    skip_report: false
+    context: tarmak-quick-verify
+    max_concurrency: 2
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.4
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/go/src"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+    trigger: "(?m)^/(re)?test( all| verify| quick verify)$"
+    rerun_command: "/test verify"
+
 periodics:
 - name: navigator-e2e-v1-7
   interval: 6h
