@@ -39,6 +39,12 @@ minikube_start_cmd = [
     "--profile=%s" % hostname,
 ]
 
+minikube_dockerenv_cmd = [
+    "minikube",
+    "docker-env",
+    "--profile=%s" % hostname,
+]
+
 minikube_wait_cmd = [
     "kubectl",
     "get",
@@ -60,7 +66,7 @@ def check(*cmd):
         # Run a check_call of the wait_cmd so if it isn't ready,
         # an exception is thrown
         subprocess.check_call(minikube_wait_cmd)
-        output, err = subprocess.Popen(['minikube', 'docker-env'], stdout=subprocess.PIPE).communicate()
+        output, err = subprocess.Popen(minikube_dockerenv_cmd, stdout=subprocess.PIPE).communicate()
         if err:
             raise Exception(err)
         exports = output.split("\n")
