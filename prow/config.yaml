@@ -285,6 +285,24 @@ presubmits:
     skip_report: false
     max_concurrency: 2
 
+  jetstack/cert-manager:
+  - <<: *minikube_in_go_1_7
+    name: cert-manager-e2e-v1-7
+    context: cert-manager-e2e-v1-7
+    always_run: false
+    trigger: "(?m)^/(re)?test( all| e2e( v?1.7)?|)( \\[.+\\])?$"
+    rerun_command: "/test e2e v1.7"
+    skip_report: false
+    max_concurrency: 2
+  - <<: *minikube_in_go_1_8
+    name: cert-manager-e2e-v1-8
+    context: cert-manager-e2e-v1-8
+    always_run: false
+    trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?|)( \\[.+\\])?$"
+    rerun_command: "/test e2e v1.8"
+    skip_report: false
+    max_concurrency: 2
+
   jetstack/puppet-module-aws_ebs:
   - <<: *puppet_module_verify
     name: puppet-module-aws_ebs-quick-verify

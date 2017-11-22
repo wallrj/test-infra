@@ -189,6 +189,19 @@
       "UNKNOWN"
     ]
   },
+  "cert-manager-e2e-v1-7": {
+    "args": [
+      "make",
+      "build",
+      "image",
+      "e2e_test",
+      "APP_VERSION=build"
+    ],
+    "scenario": "minikube",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
   "navigator-quick-verify": {
     "args": [
       "make",
