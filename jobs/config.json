@@ -193,7 +193,6 @@
     "args": [
       "make",
       "build",
-      "image",
       "e2e_test",
       "APP_VERSION=build"
     ],
@@ -206,7 +205,6 @@
     "args": [
       "make",
       "build",
-      "image",
       "e2e_test",
       "APP_VERSION=build"
     ],
