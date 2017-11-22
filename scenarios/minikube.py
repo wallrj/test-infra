@@ -43,6 +43,7 @@ minikube_dockerenv_cmd = [
     "minikube",
     "docker-env",
     "--profile=%s" % hostname,
+    "--shell=sh",
 ]
 
 minikube_wait_cmd = [
