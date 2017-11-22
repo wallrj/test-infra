@@ -60,6 +60,13 @@ def check(*cmd):
         # Run a check_call of the wait_cmd so if it isn't ready,
         # an exception is thrown
         subprocess.check_call(minikube_wait_cmd)
+        output, err = subprocess.Popen(['minikube', 'docker-env'], stdout=subprocess.PIPE).communicate()
+        if err:
+            raise Exception(err)
+        exports = output.split("\n")
+        parse_exports(exports)
+        subprocess.check_call(["docker", "ps"])
+
         # Execute test command
         subprocess.check_call(cmd)
     finally:
@@ -71,6 +78,17 @@ def check(*cmd):
             "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" % hostname
         ])
 
+def parse_exports(exports):
+    for export in exports:
+        if not export.startswith("export "):
+            continue
+        command = export[7:].split("=")
+        key = command[0]
+        val = command[1]
+        if val.startswith("\"") and val.endswith("\""):
+            val = val[1:-1]
+        os.environ[key] = val
+        print >> sys.stderr, 'Setting', key, "=", val
 
 def main(envs, cmd):
     """Run script and verify it exits 0."""
