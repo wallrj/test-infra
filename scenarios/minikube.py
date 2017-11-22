@@ -54,7 +54,7 @@ def check(*cmd):
         print >> sys.stderr, 'Waiting for kubernetes to become ready...'
         # Allow 2 minutes for minikube to become ready
         for i in xrange(1,24):
-            if subprocess.call(minikube_wait_cmd):
+            if subprocess.call(minikube_wait_cmd) == 0:
                 break
             time.sleep(5)
         # Run a check_call of the wait_cmd so if it isn't ready,
