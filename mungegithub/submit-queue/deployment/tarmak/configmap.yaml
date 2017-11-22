@@ -12,7 +12,7 @@ repo-dir: /gitrepos
 github-key-file: /etc/hook-secret-volume/secret
 
 # status contexts options.
-required-contexts: "continuous-integration/travis-ci/pr"
+required-contexts: "tarmak-quick-verify"
 required-retest-contexts: ""
 # protected-branches-extra-contexts: "cla/linuxfoundation"
 
