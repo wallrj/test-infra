@@ -26,21 +26,49 @@ import os
 import subprocess
 import sys
 import socket
+import time
 
+hostname = socket.gethostname()
+minikube_start_cmd = [
+    "minikube",
+    "start",
+    "--vm-driver=kvm",
+    "--kubernetes-version=%s" % os.environ["KUBERNETES_VERSION"],
+    "--bootstrapper=kubeadm",
+    "--memory=4096",
+    "--profile=%s" % hostname,
+]
+
+minikube_wait_cmd = [
+    "kubectl",
+    "get",
+    "nodes",
+]
 
 def check(*cmd):
     """Log and run the command, raising on errors."""
     print >> sys.stderr, 'Run:', cmd
     try:
+        # Run minikube start
+        subprocess.check_call(minikube_start_cmd)
+        print >> sys.stderr, 'Waiting for kubernetes to become ready...'
+        # Allow 2 minutes for minikube to become ready
+        for i in xrange(1,24):
+            if subprocess.call(minikube_wait_cmd):
+                break
+            time.sleep(5)
+        # Run a check_call of the wait_cmd so if it isn't ready,
+        # an exception is thrown
+        subprocess.check_call(minikube_wait_cmd)
+        # Execute test command
         subprocess.check_call(cmd)
     finally:
         subprocess.call(
             ["minikube", "delete",
-             "--profile=%s" % socket.gethostname()])
+             "--profile=%s" % hostname])
         subprocess.call([
             "rm", "-Rf",
-            "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" %
-            socket.gethostname()
+            "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" % hostname
         ])
 
 
