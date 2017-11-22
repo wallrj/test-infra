@@ -335,30 +335,30 @@ presubmits:
     name: puppet-module-tarmak-acceptance-1-8-centos
     context: puppet-module-tarmak-acceptance-1-8-centos
     always_run: false
-    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.8)?|)( \\[.+\\])?$$"
+    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.8)?|)( \\[.+\\])?$"
     rerun_command: "/test acceptance-centos v1.8"
   - <<: *puppet_module_acceptance
     name: puppet-module-tarmak-acceptance-1-7-centos
     context: puppet-module-tarmak-acceptance-1-7-centos
-    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.7)?|)( \\[.+\\])?$$"
+    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.7)?|)( \\[.+\\])?$"
     rerun_command: "/test acceptance-centos v1.7"
   - <<: *puppet_module_acceptance
     name: puppet-module-tarmak-acceptance-1-6-centos
     context: puppet-module-tarmak-acceptance-1-6-centos
     always_run: false
-    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.6)?|)( \\[.+\\])?$$"
+    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.6)?|)( \\[.+\\])?$"
     rerun_command: "/test acceptance-centos v1.6"
   - <<: *puppet_module_acceptance
     name: puppet-module-tarmak-acceptance-1-5-centos
     context: puppet-module-tarmak-acceptance-1-5-centos
     always_run: false
-    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.5)?|)( \\[.+\\])?$$"
+    trigger: "(?m)^/(re)?test( all| acceptance-centos( v?1.5)?|)( \\[.+\\])?$"
     rerun_command: "/test acceptance-centos v1.5"
   - <<: *puppet_module_acceptance
     name: puppet-module-tarmak-acceptance-1-7-ubuntu
     context: puppet-module-tarmak-acceptance-1-7-ubuntu
     always_run: false
-    trigger: "(?m)^/(re)?test( all| acceptance-ubuntu( v?1.7)?|)( \\[.+\\])?$$"
+    trigger: "(?m)^/(re)?test( all| acceptance-ubuntu( v?1.7)?|)( \\[.+\\])?$"
     rerun_command: "/test acceptance-ubuntu v1.7"
 
   jetstack/puppet-module-vault_client:
