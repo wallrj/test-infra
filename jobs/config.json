@@ -169,10 +169,20 @@
       "UNKNOWN"
     ]
   },
-  "puppet-module-vault_client-acceptance": {
+  "puppet-module-vault_client-acceptance-centos": {
     "args": [
       "make",
-      "acceptance"
+      "acceptance-centos"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
+  "puppet-module-vault_client-acceptance-ubuntu": {
+    "args": [
+      "make",
+      "acceptance-ubuntu"
     ],
     "scenario": "execute",
     "sigOwners": [
