@@ -384,8 +384,17 @@ presubmits:
     name: puppet-module-vault_client-quick-verify
     context: puppet-module-vault_client-quick-verify
   - <<: *puppet_module_acceptance
-    name: puppet-module-vault_client-acceptance
-    context: puppet-module-vault_client-acceptance
+    name: puppet-module-vault_client-acceptance-centos
+    context: puppet-module-vault_client-acceptance-centos
+    trigger: "(?m)^/(re)?test( all| acceptance(-centos)?|)( \\[.+\\])?$"
+    rerun_command: "/test acceptance-centos"
+    always_run: true
+  - <<: *puppet_module_acceptance
+    name: puppet-module-vault_client-acceptance-ubuntu
+    context: puppet-module-vault_client-acceptance-ubuntu
+    trigger: "(?m)^/(re)?test( all| acceptance(-ubuntu)?|)( \\[.+\\])?$"
+    rerun_command: "/test acceptance-ubuntu"
+    always_run: true
 
   jetstack/tarmak:
   - name: tarmak-quick-verify
