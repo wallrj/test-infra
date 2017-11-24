@@ -26,8 +26,14 @@ log_level: info
 
 tide:
   queries:
+    - "type:pr state:open repo:jetstack/puppet-module-aws_ebs label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-calico label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-etcd label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
     - "type:pr state:open repo:jetstack/puppet-module-kubernetes label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-kubernetes_addons label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-prometheus label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
     - "type:pr state:open repo:jetstack/puppet-module-tarmak label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
+    - "type:pr state:open repo:jetstack/puppet-module-vault_client label:lgtm label:approved -label:needs-ok-to-test -label:do-not-merge/work-in-progress -label:do-not-merge/release-note-label-needed"
 
 # push_gateway:
 #   endpoint: pushgateway
