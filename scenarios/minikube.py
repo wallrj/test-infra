@@ -39,6 +39,14 @@ minikube_start_cmd = [
     "--profile=%s" % hostname,
 ]
 
+minikube_ingress_cmd = [
+    "minikube",
+    "addons",
+    "enable",
+    "ingress",
+    "--profile=%s" % hostname,
+]
+
 minikube_dockerenv_cmd = [
     "minikube",
     "docker-env",
@@ -58,6 +66,7 @@ def check(*cmd):
     try:
         # Run minikube start
         subprocess.check_call(minikube_start_cmd)
+        subprocess.check_call(minikube_ingress_cmd)
         print >> sys.stderr, 'Waiting for kubernetes to become ready...'
         # Allow 2 minutes for minikube to become ready
         for i in xrange(1,24):
