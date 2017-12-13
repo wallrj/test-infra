@@ -60,39 +60,125 @@ minikube_wait_cmd = [
     "nodes",
 ]
 
+# XXX: We need the --bootstrapper argument here so that minikube knows how to
+# get the logs.
+# See https://github.com/kubernetes/minikube/issues/2056#issuecomment-336257971
+minikube_logs_cmd = [
+    "minikube",
+    "--bootstrapper=kubeadm",
+    "--profile", hostname,
+    "logs",
+]
+
+minikube_delete_cmd = [
+    "minikube",
+    "delete",
+    "--profile=%s" % hostname,
+]
+
+docker_ps_cmd = ["docker", "ps"]
+
+WORKSPACE_ENV = 'WORKSPACE'
+ARTIFACTS_DIRECTORY_NAME = '_artifacts'
+
+
+def ensure_artifacts_directory():
+    """
+    Create and return the path to an artifacts directory if it doesn't already
+    exist.
+    """
+    print >> sys.stderr, "Creating artifacts directory..."
+    artifacts_path = os.path.join(
+        os.getenv(WORKSPACE_ENV, os.getcwd()),
+        ARTIFACTS_DIRECTORY_NAME,
+    )
+    try:
+        os.makedirs(artifacts_path)
+    except os.error as e:
+        print >> sys.stderr, e
+    return artifacts_path
+
+
+def log_and_closefds_for_subprocess(f, cmd, args, kwargs):
+    """
+    Logs the command that is being run and wraps a subprocess.c* function,
+    first closing stdin and FDs other than stdout and stderr, to prevent the
+    subprocess doing attempting to do anything interactive. (Minikube prompts
+    the user to submit a bug report if it fails.)
+    """
+    print >> sys.stderr, "Run: '{}'".format(" ".join(cmd))
+    with open(os.devnull, "r") as devnull:
+        kwargs["stdin"] = devnull
+        kwargs["close_fds"] = True
+        return f(cmd, *args, **kwargs)
+
+
+def check_call(cmd, *args, **kwargs):
+    return log_and_closefds_for_subprocess(
+        subprocess.check_call,
+        cmd,
+        args,
+        kwargs,
+    )
+
+
+def check_output(cmd, *args, **kwargs):
+    return log_and_closefds_for_subprocess(
+        subprocess.check_output,
+        cmd,
+        args,
+        kwargs,
+    )
+
+
+def call(cmd, *args, **kwargs):
+    return log_and_closefds_for_subprocess(
+        subprocess.call,
+        cmd,
+        args,
+        kwargs,
+    )
+
+
 def check(*cmd):
     """Log and run the command, raising on errors."""
-    print >> sys.stderr, 'Run:', cmd
+    artifacts_path = ensure_artifacts_directory()
     try:
         # Run minikube start
-        subprocess.check_call(minikube_start_cmd)
-        subprocess.check_call(minikube_ingress_cmd)
+        check_call(minikube_start_cmd)
+        check_call(minikube_ingress_cmd)
         print >> sys.stderr, 'Waiting for kubernetes to become ready...'
         # Allow 2 minutes for minikube to become ready
-        for i in xrange(1,24):
-            if subprocess.call(minikube_wait_cmd) == 0:
+        for i in xrange(1, 24):
+            if call(minikube_wait_cmd) == 0:
                 break
             time.sleep(5)
-        # Run a check_call of the wait_cmd so if it isn't ready,
-        # an exception is thrown
-        subprocess.check_call(minikube_wait_cmd)
-        output, err = subprocess.Popen(minikube_dockerenv_cmd, stdout=subprocess.PIPE).communicate()
-        if err:
-            raise Exception(err)
+        check_call(minikube_wait_cmd)
+        output = check_output(minikube_dockerenv_cmd)
         exports = output.split("\n")
         parse_exports(exports)
-        subprocess.check_call(["docker", "ps"])
+        check_call(docker_ps_cmd)
 
-        # Execute test command
-        subprocess.check_call(cmd)
+        print >> sys.stderr, "Execute test command"
+        check_call(cmd)
     finally:
-        subprocess.call(
-            ["minikube", "delete",
-             "--profile=%s" % hostname])
-        subprocess.call([
+        print >> sys.stderr, 'Saving minikube logs...'
+        with open(
+                os.path.join(artifacts_path, "minikube-logs.txt"),
+                "wb",
+        ) as f:
+            call(
+                minikube_logs_cmd,
+                stdout=f,
+            )
+        print >> sys.stderr, 'Deleting minikub VM...'
+        call(minikube_delete_cmd)
+        print >> sys.stderr, 'Deleting minikube machine files...'
+        call([
             "rm", "-Rf",
-            "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" % hostname
+            "/var/lib/libvirt/caches/minikube/.minikube/machines/%s" % hostname,
         ])
+
 
 def parse_exports(exports):
     for export in exports:
@@ -105,6 +191,7 @@ def parse_exports(exports):
             val = val[1:-1]
         os.environ[key] = val
         print >> sys.stderr, 'Setting', key, "=", val
+
 
 def main(envs, cmd):
     """Run script and verify it exits 0."""
