@@ -25,7 +25,10 @@ ENV GCLOUD_VERSION 163.0.0
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
     tar xf google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz -C / && \
     rm google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
-    /google-cloud-sdk/install.sh
+    /google-cloud-sdk/install.sh && \
+    curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.6.1-linux-amd64.tar.gz && \
+    tar xvf helm.tar.gz && \
+    mv linux-amd64/helm /usr/local/bin
 ENV PATH "/google-cloud-sdk/bin:${PATH}"
 
 WORKDIR /workspace

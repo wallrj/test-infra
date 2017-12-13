@@ -251,7 +251,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.4
+      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.5
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/go/src"
@@ -411,7 +411,7 @@ presubmits:
     agent: kubernetes
     spec:
       containers:
-      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.4
+      - image: gcr.io/jetstack-build-infra/gcloud-in-go:0.5
         args:
         - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
         - "--root=/go/src"
