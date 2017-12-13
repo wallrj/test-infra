@@ -432,8 +432,39 @@ presubmits:
       - name: service
         secret:
           secretName: service-account
-    trigger: "(?m)^/(re)?test( all| verify| quick verify)$"
-    rerun_command: "/test verify"
+    trigger: "(?m)^/(re)?test( all| verify( quick)?|)( \\[.+\\])?$"
+    rerun_command: "/test verify quick"
+  - name: tarmak-docs-verify
+    always_run: true
+    skip_report: false
+    context: tarmak-docs-verify
+    max_concurrency: 2
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/sphinx-docs:0.1
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/workspace"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        resources:
+          requests:
+            cpu: 750m
+            memory: 1Gi
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+    trigger: "(?m)^/(re)?test( all| verify( docs)?|)( \\[.+\\])?$"
+    rerun_command: "/test verify docs"
 
 periodics:
 - name: navigator-e2e-v1-7

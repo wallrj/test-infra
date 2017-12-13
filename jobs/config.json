@@ -199,6 +199,21 @@
       "UNKNOWN"
     ]
   },
+  "tarmak-docs-verify": {
+    "args": [
+      "make",
+      "-C",
+      "docs",
+      "clean",
+      "spelling",
+      "linkcheck",
+      "html"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
   "cert-manager-e2e-v1-7": {
     "args": [
       "make",
