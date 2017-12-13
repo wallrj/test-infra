@@ -1,10 +1,12 @@
-FROM python:3.6
+FROM debian:jessie
 LABEL maintainer="christian.simon@jetstack.io"
 
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     build-essential \
+    python-minimal \
+    python-pip \
     python3-enchant \
     wamerican \
     wbritish && \

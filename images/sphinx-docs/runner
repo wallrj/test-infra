@@ -18,7 +18,7 @@ set -o nounset
 set -o pipefail
 
 git clone https://github.com/jetstack/test-infra
-exec python2 ./test-infra/jenkins/bootstrap.py \
+./test-infra/jenkins/bootstrap.py \
     --job=${JOB_NAME} \
     --service-account=${GOOGLE_APPLICATION_CREDENTIALS} \
     "$@"
