@@ -1,5 +1,5 @@
 ---
-default_org: dummy
+default_org: jetstack
 default_repo: dummy
 external_services:
   jetstack:
