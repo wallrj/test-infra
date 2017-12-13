@@ -24,7 +24,8 @@ RUN pip install virtualenv
 ADD runner /
 
 # run as non root
-RUN mkdir -p /home/nobody /workspace /venv && chown nobody /home/nobody /workspace /venv
+ENV VENV_PATH /venv
+RUN mkdir -p /home/nobody /workspace ${VENV_PATH} && chown nobody /home/nobody /workspace ${VENV_PATH}
 
 WORKDIR /workspace
 
@@ -32,7 +33,7 @@ ENV HOME /home/nobody
 USER nobody
 
 ADD requirements.txt /tmp/requirements.txt
-RUN virtualenv -p $(which python3) /venv
-RUN /venv/bin/pip install -r /tmp/requirements.txt
+RUN virtualenv -p $(which python3) ${VENV_PATH}
+RUN ${VENV_PATH}/bin/pip install -r /tmp/requirements.txt
 
 ENTRYPOINT ["/bin/bash", "/runner"]
