@@ -208,7 +208,8 @@
       "clean",
       "spelling",
       "linkcheck",
-      "html"
+      "html",
+      "copy_artifacts"
     ],
     "scenario": "execute",
     "sigOwners": [
