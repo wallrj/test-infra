@@ -201,6 +201,7 @@
   },
   "tarmak-docs-verify": {
     "args": [
+      "--",
       "make",
       "-C",
       "docs",
