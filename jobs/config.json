@@ -216,6 +216,21 @@
       "UNKNOWN"
     ]
   },
+  "tarmak-docs-push": {
+    "args": [
+      "--",
+      "make",
+      "-C",
+      "docs",
+      "clean",
+      "multiversion_build",
+      "multiversion_push"
+    ],
+    "scenario": "execute",
+    "sigOwners": [
+      "UNKNOWN"
+    ]
+  },
   "cert-manager-e2e-v1-7": {
     "args": [
       "make",
