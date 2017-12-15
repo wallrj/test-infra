@@ -567,7 +567,7 @@ periodics:
         type: Socket
 
 
-postSubmit:
+postsubmits:
   jetstack/tarmak:
   - name: tarmak-docs-push
     branches:
