@@ -565,3 +565,45 @@ periodics:
       hostPath:
         path: /var/run/libvirt/libvirt-sock
         type: Socket
+
+
+postSubmit:
+  jetstack/tarmak:
+  - name: tarmak-docs-push
+    branches:
+    - master
+    - release-0.1
+    - release-0.2
+    context: tarmak-docs-push
+    agent: kubernetes
+    spec:
+      containers:
+      - image: gcr.io/jetstack-build-infra/sphinx-docs:0.1
+        args:
+        - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+        - "--root=/workspace"
+        - "--upload=gs://jetstack-logs/pr-logs"
+        - "--clean"
+        env:
+        - name: DOCS_GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/docs-service-account/service-account.json
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/service-account/service-account.json
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+        volumeMounts:
+        - name: service
+          mountPath: /etc/service-account
+          readOnly: true
+        - name: docs-service
+          mountPath: /etc/docs-service-account
+          readOnly: true
+      volumes:
+      - name: service
+        secret:
+          secretName: service-account
+      - name: docs-service
+        secret:
+          secretName: tarmak-docs-push-service-account
