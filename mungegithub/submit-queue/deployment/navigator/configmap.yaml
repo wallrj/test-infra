@@ -12,8 +12,8 @@ repo-dir: /gitrepos
 github-key-file: /etc/hook-secret-volume/secret
 
 # status contexts options.
-required-contexts: "navigator-quick-verify,navigator-e2e-v1-7,navigator-e2e-v1-8"
-required-retest-contexts: "navigator-e2e-v1-7,navigator-e2e-v1-8"
+required-contexts: "navigator-quick-verify,navigator-e2e-v1-7,navigator-e2e-v1-8,navigator-e2e-v1-9"
+required-retest-contexts: "navigator-quick-verify,navigator-e2e-v1-7,navigator-e2e-v1-8,navigator-e2e-v1-9"
 # protected-branches-extra-contexts: "cla/linuxfoundation"
 
 # submit-queue options.
