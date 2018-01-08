@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION = 0.2
-KUBERNETES_VERSIONS = v1.8.3 v1.7.10
+VERSION = 0.3
+KUBERNETES_VERSIONS = v1.8.3 v1.7.10 v1.9.1
 
 $(KUBERNETES_VERSIONS):
 	docker build --build-arg KUBERNETES_VERSION=$@ -t "gcr.io/jetstack-build-infra/minikube-in-go-$@:$(VERSION)" .

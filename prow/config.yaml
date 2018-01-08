@@ -241,6 +241,55 @@ tide:
         path: /var/run/libvirt/libvirt-sock
         type: Socket
 
+.minikube_in_go_1_9: &minikube_in_go_1_9
+  agent: kubernetes
+  spec:
+    nodeSelector:
+      node-role.kubernetes.io/libvirt: ""
+    # Note: this is not supported yet by prow PodSpec, taint temporary removed
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+    containers:
+    - image: gcr.io/jetstack-build-infra/minikube-in-go-v1.9.1:0.3
+      args:
+      - "--repo=github.com/$(REPO_OWNER)/$(REPO_NAME)=$(PULL_REFS)"
+      - "--root=/go/src"
+      - "--upload=gs://jetstack-logs/pr-logs"
+      - "--clean"
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/service-account/service-account.json
+      - name: MINIKUBE_HOME
+        value: /var/lib/libvirt/caches/minikube
+      resources:
+        requests:
+          cpu: 750m
+          memory: 4Gi
+      securityContext:
+        privileged: true
+      volumeMounts:
+      - name: service
+        mountPath: /etc/service-account
+        readOnly: true
+      - name: var-lib-libvirt
+        mountPath: /var/lib/libvirt
+      - name: var-run-libvirt-libvirt-sock
+        mountPath: /var/run/libvirt/libvirt-sock
+    volumes:
+    - name: service
+      secret:
+        secretName: service-account
+    - name: var-lib-libvirt
+      hostPath:
+        path: /var/lib/libvirt
+        type: Directory
+    - name: var-run-libvirt-libvirt-sock
+      hostPath:
+        path: /var/run/libvirt/libvirt-sock
+        type: Socket
+
 presubmits:
   jetstack/navigator:
   - name: navigator-quick-verify
@@ -288,6 +337,14 @@ presubmits:
     always_run: false
     trigger: "(?m)^/(re)?test( all| e2e( v?1.8)?|)( \\[.+\\])?$"
     rerun_command: "/test e2e v1.8"
+    skip_report: false
+    max_concurrency: 2
+  - <<: *minikube_in_go_1_9
+    name: navigator-e2e-v1-9
+    context: navigator-e2e-v1-9
+    always_run: false
+    trigger: "(?m)^/(re)?test( all| e2e( v?1.9)?|)( \\[.+\\])?$"
+    rerun_command: "/test e2e v1.9"
     skip_report: false
     max_concurrency: 2
 
