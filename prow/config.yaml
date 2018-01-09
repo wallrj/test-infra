@@ -167,7 +167,7 @@ tide:
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: 750m
+          cpu: 1800m
           memory: 4Gi
       securityContext:
         privileged: true
@@ -216,7 +216,7 @@ tide:
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: 750m
+          cpu: 1800m
           memory: 4Gi
       securityContext:
         privileged: true
@@ -265,7 +265,7 @@ tide:
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: 750m
+          cpu: 1800m
           memory: 4Gi
       securityContext:
         privileged: true
@@ -311,7 +311,7 @@ presubmits:
           value: /etc/service-account/service-account.json
         resources:
           requests:
-            cpu: 750m
+            cpu: 1
             memory: 1Gi
         volumeMounts:
         - name: service
@@ -549,7 +549,7 @@ periodics:
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: 750m
+          cpu: 1800m
           memory: 4Gi
       securityContext:
         privileged: true
@@ -598,7 +598,7 @@ periodics:
         value: /var/lib/libvirt/caches/minikube
       resources:
         requests:
-          cpu: 750m
+          cpu: 1800m
           memory: 4Gi
       securityContext:
         privileged: true
