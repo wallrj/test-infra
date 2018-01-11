@@ -44,16 +44,13 @@ RUN apt-get update \
         zlib1g-dev \
     && apt-get clean
 
-RUN curl -L https://github.com/docker/machine/releases/download/v0.13.0/docker-machine-Linux-x86_64 >/tmp/docker-machine \
-    && chmod +x /tmp/docker-machine \
-    && cp /tmp/docker-machine /usr/local/bin/docker-machine
-
+RUN curl -LO https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-kvm2 && \
+    chmod +x docker-machine-driver-kvm2 && \
+    mv docker-machine-driver-kvm2 /usr/bin/
 RUN wget https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz && \
-	tar -C /usr/local -xzf go1.9.1.linux-amd64.tar.gz
+  tar -C /usr/local -xzf go1.9.1.linux-amd64.tar.gz
 ENV PATH "/usr/local/go/bin:/go/bin:${PATH}"
 ENV GOPATH "/go"
-
-RUN go get -v github.com/dhiltgen/docker-machine-kvm/cmd/docker-machine-driver-kvm
 
 ENV GCLOUD_VERSION 163.0.0
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$GCLOUD_VERSION-linux-x86_64.tar.gz && \
